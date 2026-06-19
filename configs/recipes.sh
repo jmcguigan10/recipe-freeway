@@ -116,6 +116,7 @@ declare -gA FREEWAY_STAGE_INIT=(
 )
 
 declare -gA FREEWAY_STAGE_COOKER_CALLS=(
+  [bh]="BH:setMomentum:@BEAM_MOMENTUM@"
   [tracklets]="cryptor:setMomentum:@BEAM_MOMENTUM@"
 )
 
