@@ -1,0 +1,65 @@
+/g4PSI/det/component Beamline
+# === beamline detectors ===
+/g4PSI/det/component BHC
+/g4PSI/det/component BHD threshold = 0.15 MeV
+/g4PSI/det/component GEM0
+/g4PSI/det/component GEM1
+/g4PSI/det/component GEM2
+/g4PSI/det/component GEM3
+/g4PSI/det/component VETO threshold = 4.0 MeV
+/g4PSI/det/component ScatteringChamber_TypeTrapezoid SD = yes
+/g4PSI/det/component CHV threshold = 0.45 MeV, type = 13, length = 200 mm
+/g4PSI/det/component BM state = open, shift_h_BMA = -11.31168 mm, shift_v_BMA = 1.09080 mm, angle_BMA = 0.03957 deg
+/g4PSI/det/component CAL n = 8, converter_thickness = 4 mm, converter_material = G4_AIR, air_gap = 0.1 cm
+
+# === scattered particle detectors ===
+/g4PSI/det/component STTL testplane = yes, wire_file = XYZ_STTL_mapping.csv
+/g4PSI/det/component STTR testplane = yes, wire_file = XYZ_STTR_mapping.csv
+/g4PSI/det/component SPSLF threshold = 1.5 MeV
+/g4PSI/det/component SPSRF threshold = 1.5 MeV
+/g4PSI/det/component SPSLR threshold = 1.5 MeV
+/g4PSI/det/component SPSRR threshold = 1.5 MeV
+/g4PSI/det/component TestPlanes
+/g4PSI/det/component Target_TypeUMich ladder = LH2, SD = yes
+
+/g4PSI/det/kapton_thickness 120 um
+/g4PSI/det/target_radius 30 mm
+/g4PSI/det/pipe_distance 60 mm
+/g4PSI/det/pipe_angle 25 deg
+/g4PSI/det/entrance_window_thickness 120 um
+/g4PSI/det/info info.txt
+/g4PSI/det/setup standard2015
+/process/msc/ThetaLimit 5 deg
+
+# Jan's email 11/15/2022
+/g4PSI/det/trans BM 2.00493 -1.38815 2.86053 mm
+/g4PSI/det/rot BM -0.38123 0.01903 -0.43324 deg
+
+# Ethan's email 11/15/22 setup.mac
+/g4PSI/det/trans GEM0 -0.511 0.106 -0.008 mm
+/g4PSI/det/trans GEM1 -1.034 1.020 -4.803 mm
+/g4PSI/det/trans GEM2 -0.754 0.246 0.937 mm
+/g4PSI/det/trans GEM3 -1.151 0.304 0.065 mm
+/g4PSI/det/rot GEM0 0.036 0.018 -0.541 deg
+/g4PSI/det/rot GEM1 -0.666 -0.233 -6.706 deg
+/g4PSI/det/rot GEM2 -0.075 1.132 -1.290 deg
+/g4PSI/det/rot GEM3 0.032 -0.164 -0.223 deg
+
+/g4PSI/det/trigger SPSLF SPSLR BHD !VETO !CHVL !CHVR 0
+/g4PSI/det/trigger SPSRF SPSRR BHD !VETO !CHVL !CHVR 0
+/g4PSI/det/trigger BHD !VETO !CHVL !CHVR 15
+/g4PSI/det/trigger BHD 15
+
+# =======================================
+/run/initialize
+
+/gun/beam_momentum_spread 0.008
+/gun/set_pathlength 23.5 m
+/gun/set_vertexz -1.5 m
+/gun/mode beamline_profile
+/gun/seeds <%= seed_1 %> <%= seed_2 %>
+/gun/particle <%= particle %>
+/g4PSI/run/nr <%= run_nr %>
+/gun/beam_momentum <%= beam_momentum %> MeV
+/g4PSI/run/rootfile <%= rootfile %>
+/run/beamOn <%= n_events %>

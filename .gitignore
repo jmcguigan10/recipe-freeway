@@ -1,0 +1,7 @@
+.slurm_out
+.tmp
+data_process/*
+macros/generated
+mc22308/Sim
+packman-muse
+__pycache__

@@ -1,0 +1,11 @@
+declare -gA PHYSICS_CONFIG=(
+  [RUN_NR]="22308"
+  [RAD_MODE]="rad2"
+  [PARTICLE]="e+"
+  [PARTICLE_TAG]="e_pos"
+  [PART]="0"
+  [BEAM_MOMENTUM]="159.279"
+  [N_EVENTS]="10000"
+  [SEED_1]="1778753222"
+  [SEED_2]="1778753290"
+)
