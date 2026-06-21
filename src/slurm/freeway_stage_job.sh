@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd "$script_dir/../.." && pwd)"
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+if [[ -n "${REAL_MUSE_REPO_ROOT:-}" ]]; then
+  repo_root="$(cd -- "$REAL_MUSE_REPO_ROOT" && pwd -P)"
+else
+  repo_root="$(cd -- "$script_dir/../.." && pwd -P)"
+fi
 
 # shellcheck source=../shell/lib/loader.sh
 source "$repo_root/src/shell/lib/loader.sh"

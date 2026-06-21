@@ -29,7 +29,11 @@ pipeline_arg="$2"
 
 this_file="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)/$(basename -- "${BASH_SOURCE[0]}")"
 script_dir="$(cd -- "$(dirname -- "$this_file")" && pwd -P)"
-repo_root="$(cd -- "$script_dir/../.." && pwd -P)"
+if [[ -n "${REAL_MUSE_REPO_ROOT:-}" ]]; then
+  repo_root="$(cd -- "$REAL_MUSE_REPO_ROOT" && pwd -P)"
+else
+  repo_root="$(cd -- "$script_dir/../.." && pwd -P)"
+fi
 
 source "$repo_root/src/shell/lib/loader.sh"
 select_pipeline "$pipeline_arg"
@@ -43,7 +47,11 @@ freeway_script="$repo_root/src/shell/freeway/${FREEWAY_STAGE_SCRIPT[$stage]}"
 log_dir="$data_run_dir/slurm"
 mkdir -p "$log_dir"
 
-if [[ -z "${SLURM_JOB_ID:-}" ]]; then
+if [[ "${FREEWAY_SUBMIT_FREEWAY_JOB:-0}" != "1" ]]; then
+  if [[ -n "${SLURM_JOB_ID:-}" ]]; then
+    echo "Detected existing Slurm job $SLURM_JOB_ID; submitting a separate freeway job instead of running inside that active allocation."
+  fi
+
   if [[ "$stage" == "g4psi" ]]; then
     partition="$sim_slurm_partition"
     nodes="$sim_slurm_nodes"
@@ -72,7 +80,7 @@ if [[ -z "${SLURM_JOB_ID:-}" ]]; then
       --job-name="freeway_${item}_${stage}_${run_tag}" \
       --output="$log_dir/%x-%j.out" \
       --error="$log_dir/%x-%j.err" \
-      --export=ALL,PIPELINE_TAG="$pipeline_tag",DATA_RUN_DIR="$data_run_dir",REAL_MUSE_REPO_ROOT="$repo_root" \
+      --export=ALL,PIPELINE_TAG="$pipeline_tag",DATA_RUN_DIR="$data_run_dir",REAL_MUSE_REPO_ROOT="$repo_root",FREEWAY_SUBMIT_FREEWAY_JOB=1 \
       "$this_file" "$item" "$pipeline_tag"
   )"
 

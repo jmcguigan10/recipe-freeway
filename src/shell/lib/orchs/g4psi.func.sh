@@ -87,7 +87,14 @@ run_g4psi_macro() {
   local launcher=()
 
   if [[ -n "${SLURM_JOB_ID:-}" ]] && ! is_truthy "${G4PSI_DISABLE_SRUN:-0}" && command -v srun >/dev/null 2>&1; then
-    launcher=(srun --exclusive --nodes=1 --ntasks=1 --cpus-per-task="${SLURM_CPUS_PER_TASK:-1}")
+    case "${SLURM_STEP_ID:-}" in
+      ""|batch|extern)
+        launcher=(srun --exclusive --nodes=1 --ntasks=1 --cpus-per-task="${SLURM_CPUS_PER_TASK:-1}")
+        ;;
+      *)
+        echo "Detected active Slurm step ${SLURM_STEP_ID}; running g4PSI directly to avoid a nested srun step."
+        ;;
+    esac
   fi
 
   with_dir "$stack_dir" \
