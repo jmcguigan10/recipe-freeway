@@ -112,6 +112,149 @@ run_g4psi_single_task_stage() {
   validate_root_file "$rendered_rootfile" "${FREEWAY_STAGE_TREE[$g4psi_stage]}"
 }
 
+g4psi_status_elapsed() {
+  local started_at="$1"
+  local now
+  local elapsed
+
+  now="$(date +%s)"
+  elapsed=$((now - started_at))
+  printf '%02d:%02d:%02d\n' \
+    "$((elapsed / 3600))" \
+    "$(((elapsed % 3600) / 60))" \
+    "$((elapsed % 60))"
+}
+
+g4psi_status_root_size() {
+  local root_path="$1"
+
+  if [[ -s "$root_path" ]]; then
+    du -h "$root_path" 2>/dev/null | awk '{print $1}'
+  else
+    printf '0\n'
+  fi
+}
+
+g4psi_status_bar() {
+  local status="$1"
+  local chunk_index="$2"
+  local tick="$3"
+  local width=24
+  local position=$(((tick + chunk_index) % width))
+  local bar=""
+  local i
+
+  for ((i = 0; i < width; i++)); do
+    case "$status" in
+      done)
+        bar+="="
+        ;;
+      failed)
+        bar+="!"
+        ;;
+      *)
+        if ((i == position)); then
+          bar+=">"
+        else
+          bar+="."
+        fi
+        ;;
+    esac
+  done
+
+  printf '[%s]\n' "$bar"
+}
+
+g4psi_render_chunk_statuses() {
+  local worker_count="$1"
+  local tick="$2"
+  local use_tty="$3"
+  local printed_lines="$4"
+  local chunk_index
+  local chunk_label
+  local status
+  local elapsed
+  local root_size
+  local bar
+
+  if [[ "$use_tty" == "1" && "$printed_lines" -gt 0 ]]; then
+    printf '\033[%sA' "$printed_lines"
+  fi
+
+  for ((chunk_index = 0; chunk_index < worker_count; chunk_index++)); do
+    chunk_label="$(printf 'chunk%02d' "$chunk_index")"
+    status="${chunk_statuses[$chunk_index]}"
+    elapsed="$(g4psi_status_elapsed "${chunk_started_at[$chunk_index]}")"
+    root_size="$(g4psi_status_root_size "${chunk_roots[$chunk_index]}")"
+    bar="$(g4psi_status_bar "$status" "$chunk_index" "$tick")"
+
+    if [[ "$use_tty" == "1" ]]; then
+      printf '\r\033[K'
+    fi
+    printf '%s %s %-7s elapsed=%s root=%6s log=%s\n' \
+      "$chunk_label" \
+      "$bar" \
+      "$status" \
+      "$elapsed" \
+      "$root_size" \
+      "$(basename -- "${chunk_logs[$chunk_index]}")"
+  done
+}
+
+g4psi_monitor_chunks() {
+  local worker_count="$1"
+  local status_interval="$2"
+  local use_tty=0
+  local printed_lines=0
+  local tick=0
+  local last_render=0
+  local now
+  local active
+  local chunk_index
+  local rc
+  local failed=0
+
+  if [[ -t 1 && "${TERM:-}" != "dumb" ]] && ! is_truthy "${G4PSI_STATUS_PLAIN:-0}"; then
+    use_tty=1
+  fi
+
+  while :; do
+    active=0
+    for ((chunk_index = 0; chunk_index < worker_count; chunk_index++)); do
+      if [[ "${chunk_statuses[$chunk_index]}" != "running" ]]; then
+        continue
+      fi
+
+      if kill -0 "${pids[$chunk_index]}" 2>/dev/null; then
+        active=$((active + 1))
+      elif wait "${pids[$chunk_index]}"; then
+        chunk_statuses[$chunk_index]="done"
+      else
+        rc=$?
+        chunk_statuses[$chunk_index]="failed"
+        chunk_exit_codes[$chunk_index]="$rc"
+        failed=1
+      fi
+    done
+
+    now="$(date +%s)"
+    if ((tick == 0 || active == 0 || now - last_render >= status_interval)); then
+      if [[ "$use_tty" != "1" ]]; then
+        printf 'g4PSI chunk status at %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+      fi
+      g4psi_render_chunk_statuses "$worker_count" "$tick" "$use_tty" "$printed_lines"
+      printed_lines="$worker_count"
+      last_render="$now"
+      tick=$((tick + 1))
+    fi
+
+    ((active > 0)) || break
+    sleep 1
+  done
+
+  return "$failed"
+}
+
 run_g4psi_parallel_task_stage() {
   local worker_count="$1"
   local total_events="$2"
@@ -134,8 +277,13 @@ run_g4psi_parallel_task_stage() {
   local pids=()
   local chunk_roots=()
   local chunk_logs=()
+  local chunk_statuses=()
+  local chunk_started_at=()
+  local chunk_exit_codes=()
+  local status_interval
 
   mkdir -p "$chunk_dir"
+  status_interval="$(g4psi_positive_int_value "G4PSI_STATUS_INTERVAL" "${G4PSI_STATUS_INTERVAL:-5}")"
 
   echo "g4PSI parallel tasks: $worker_count"
   echo "Total events:         $total_events"
@@ -171,16 +319,20 @@ run_g4psi_parallel_task_stage() {
     pids+=("$!")
     chunk_roots+=("$chunk_root")
     chunk_logs+=("$chunk_log")
+    chunk_statuses+=("running")
+    chunk_started_at+=("$(date +%s)")
+    chunk_exit_codes+=("0")
   done
 
+  g4psi_monitor_chunks "$worker_count" "$status_interval" || failed=1
+
   for chunk_index in "${!pids[@]}"; do
-    if wait "${pids[$chunk_index]}"; then
+    if [[ "${chunk_statuses[$chunk_index]}" == "done" ]]; then
       echo "Finished chunk$(printf '%02d' "$chunk_index"): ${chunk_logs[$chunk_index]}"
-    else
-      rc=$?
+    elif [[ "${chunk_statuses[$chunk_index]}" == "failed" ]]; then
+      rc="${chunk_exit_codes[$chunk_index]}"
       echo "g4PSI chunk$(printf '%02d' "$chunk_index") failed with exit code $rc: ${chunk_logs[$chunk_index]}" >&2
       tail -n 80 "${chunk_logs[$chunk_index]}" >&2 || true
-      failed=1
     fi
   done
 
