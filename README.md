@@ -76,12 +76,29 @@ configs/slurm.sh     Slurm resources for simulation and recipe stages
 configs/recipes.sh   freeway stage order, recipes, inputs, outputs, trees, cooker calls
 ```
 
+Stage 00 g4PSI parallelism is controlled by the simulation Slurm task count:
+
+```bash
+declare -gA SLURM_SIM_CONFIG=(
+  [NTASKS]="4"
+  [CPUS_PER_TASK]="1"
+)
+```
+
+`00_run_g4psi.sh` runs one g4PSI process per task, splits
+`configs/physics.sh` `N_EVENTS` across those tasks, and merges the chunk ROOT
+files back into the normal single `*_g4psi.root` output. `N_EVENTS` remains the
+total event count for the run, not the per-task event count.
+
 Important current recipe call configuration:
 
 ```bash
 declare -gA FREEWAY_STAGE_COOKER_CALLS=(
   [bh]="BH:setMomentum:@BEAM_MOMENTUM@"
   [tracklets]="cryptor:setMomentum:@BEAM_MOMENTUM@"
+  [vertex]="VertexRecon:setMomentum:@BEAM_MOMENTUM@"
+  [pathlength]="PathLength:setMomentum:@BEAM_MOMENTUM@"
+  [cross_section]="cs:setMomentum:@BEAM_MOMENTUM@"
 )
 ```
 
@@ -107,17 +124,17 @@ data_process/<pipeline-tag>/configs/
 Existing snapshot files win over top-level `configs/*.sh`. The copy operation
 does not overwrite them.
 
-That means changing `configs/recipes.sh` after a run already exists is not
-enough for that run. For an existing run, either edit the copied file directly
-or delete the stale copied config before rerunning:
+That means changing `configs/*.sh` after a run already exists is not enough for
+that run. For an existing run, either edit the copied file directly or delete
+the stale copied config before rerunning:
 
 ```bash
-rm data_process/<pipeline-tag>/configs/recipes.sh
+rm data_process/<pipeline-tag>/configs/slurm.sh
 bash src/slurm/run_freeway.sh <pipeline-tag>
 ```
 
 On the next run, the missing snapshot file is recopied from the top-level
-`configs/recipes.sh`.
+`configs/`.
 
 ## Pipeline Tags and Outputs
 
@@ -180,6 +197,11 @@ bash src/slurm/run_freeway.sh <pipeline-tag>
 
 It creates `data_process/<tag>/`, snapshots configs, checks which stage ROOT
 files already exist, and submits every ready stage with `sbatch`.
+
+For stage 00, `SLURM_SIM_CONFIG[NTASKS]` controls the number of concurrent
+g4PSI workers inside the single Slurm job. The stage writes per-worker logs
+under `data_process/<tag>/g4psi_chunks/`, deletes per-worker ROOT files after a
+successful merge, and publishes the usual single g4psi ROOT file for stage 01.
 
 Stage logs go to:
 
@@ -276,6 +298,8 @@ PIPELINE_TAG           selected run tag
 REAL_MUSE_REPO_ROOT    exported by Slurm jobs so they can find this checkout
 MUSE_INIT              optional override for the cooker init XML
 MUSE_PIPELINE_TMPDIR   temp directory for cooker and ROOT validation files
+G4PSI_PARALLEL_TASKS   override stage-00 worker count for local/test runs
+G4PSI_DISABLE_SRUN     set truthy to launch workers without nested srun
 FREEWAY_SBATCH_BIN     override sbatch for testing
 ```
 

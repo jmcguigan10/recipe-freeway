@@ -40,6 +40,17 @@ particle_pid_for() {
   esac
 }
 
+run_stack_command() {
+  local stack_cmd=("$@")
+
+  (
+    cd "$stack_dir"
+    "$stack_dir/scripts/pixi-local" run -e batch bash \
+      "$stack_dir/scripts/stack-shell.sh" \
+      "${stack_cmd[@]}"
+  )
+}
+
 run_stack_python() {
   local script="$1"
   local timeout_seconds="${STACK_PYTHON_TIMEOUT:-${ROOT_VALIDATE_TIMEOUT:-120}}"
@@ -75,7 +86,7 @@ validate_root_file() {
   fi
 
   mkdir -p "$tmp_dir"
-  log_file="$(mktemp "$tmp_dir/validate_root.XXXXXX.log")"
+  log_file="$(mktemp "$tmp_dir/validate_root.log.XXXXXX")"
 
   if run_stack_python "$repo_root/src/python/validate_root_file.py" \
       "$root_file" "$expected_tree" >"$log_file" 2>&1; then
@@ -85,6 +96,59 @@ validate_root_file() {
     rc=$?
     cat "$log_file" >&2
     rm -f "$log_file"
+    return "$rc"
+  fi
+}
+
+merge_root_files() {
+  local output_root="$1"
+  local expected_tree="$2"
+  local output_dir
+  local output_base
+  local tmp_root
+  local rc
+  local input_root
+  shift 2
+
+  if (($# == 0)); then
+    echo "No ROOT inputs provided for merge: $output_root" >&2
+    return 1
+  fi
+
+  for input_root in "$@"; do
+    if [[ ! -s "$input_root" ]]; then
+      echo "ROOT merge input is missing or empty: $input_root" >&2
+      return 1
+    fi
+  done
+
+  output_dir="$(dirname -- "$output_root")"
+  output_base="$(basename -- "$output_root")"
+
+  mkdir -p "$output_dir"
+  tmp_root="$(mktemp "$output_dir/.${output_base}.merge.tmp.XXXXXX")"
+
+  if run_stack_command hadd -f "$tmp_root" "$@"; then
+    :
+  else
+    rc=$?
+    rm -f "$tmp_root"
+    return "$rc"
+  fi
+
+  if validate_root_file "$tmp_root" "$expected_tree"; then
+    :
+  else
+    rc=$?
+    rm -f "$tmp_root"
+    return "$rc"
+  fi
+
+  if mv -f "$tmp_root" "$output_root"; then
+    :
+  else
+    rc=$?
+    rm -f "$tmp_root"
     return "$rc"
   fi
 }
@@ -101,8 +165,8 @@ count_root_payload() {
   shift 4
 
   mkdir -p "$tmp_dir"
-  stdout_log="$(mktemp "$tmp_dir/count_root_payload.XXXXXX.out")"
-  stderr_log="$(mktemp "$tmp_dir/count_root_payload.XXXXXX.err")"
+  stdout_log="$(mktemp "$tmp_dir/count_root_payload.out.XXXXXX")"
+  stderr_log="$(mktemp "$tmp_dir/count_root_payload.err.XXXXXX")"
 
   if run_stack_python "$repo_root/src/python/count_root_payload.py" \
       "$root_file" "$tree_name" "$branch_name" "$payload_field" "$@" \

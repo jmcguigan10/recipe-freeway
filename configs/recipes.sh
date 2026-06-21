@@ -118,6 +118,9 @@ declare -gA FREEWAY_STAGE_INIT=(
 declare -gA FREEWAY_STAGE_COOKER_CALLS=(
   [bh]="BH:setMomentum:@BEAM_MOMENTUM@"
   [tracklets]="cryptor:setMomentum:@BEAM_MOMENTUM@"
+  [vertex]="VertexRecon:setMomentum:@BEAM_MOMENTUM@"
+  [pathlength]="PathLength:setMomentum:@BEAM_MOMENTUM@"
+  [cross_section]="cs:setMomentum:@BEAM_MOMENTUM@"
 )
 
 declare -gA FREEWAY_STAGE_REPORT_PAYLOAD=(
