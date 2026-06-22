@@ -94,6 +94,7 @@ apply_physics_config() {
   seed_1="${PHYSICS_CONFIG[SEED_1]:-1778753222}"
   seed_2="${PHYSICS_CONFIG[SEED_2]:-1778753290}"
   rad_mode="${PHYSICS_CONFIG[RAD_MODE]:-rad2}"
+  store_t0="${PHYSICS_CONFIG[STORE_T0]:-false}"
   rad_mode="${rad_mode#--}"
   rad_flag="--$rad_mode"
 
@@ -106,6 +107,7 @@ apply_physics_config() {
   SEED_1="$seed_1"
   SEED_2="$seed_2"
   RAD_MODE="$rad_mode"
+  STORE_T0="$store_t0"
 }
 
 validate_slurm_mem() {

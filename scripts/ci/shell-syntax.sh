@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)"
+cd "$repo_root"
+
+git ls-files '*.sh' 'configs/*.sh' | sort -u | while IFS= read -r file; do
+  case "$file" in
+    src/slurm/samples/*)
+      continue
+      ;;
+  esac
+
+  echo "bash -n $file"
+  bash -n "$file"
+done

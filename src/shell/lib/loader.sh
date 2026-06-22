@@ -36,6 +36,7 @@ load_muse_pipeline_shell() {
   source_project_lib paths.sh || return $?
   source_project_lib config.sh || return $?
   source_project_lib root.sh || return $?
+  source_project_lib parallel.sh || return $?
   source_project_lib orchs/env.func.sh || return $?
   source_project_lib orchs/cooker.func.sh || return $?
   source_project_lib orchs/g4psi.func.sh || return $?
