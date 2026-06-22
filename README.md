@@ -244,10 +244,12 @@ bash src/slurm/run_freeway.sh <pipeline-tag>
 It creates `data_process/<tag>/`, snapshots configs, checks which stage ROOT
 files already exist, and submits every ready stage with `sbatch`.
 
-Stage 00 g4PSI uses `SLURM_SIM_CONFIG`. The stage runs one worker per selected
-task, splits `N_EVENTS` across those workers, writes per-worker logs under
-`data_process/<tag>/g4psi_chunks/`, merges chunk ROOT files into the normal
-`*_g4psi.root`, then deletes successful chunk ROOT files. Chunk logs are kept.
+Under Slurm, stage 00 g4PSI uses `SLURM_SIM_CONFIG` and runs one worker per
+selected task. It splits `N_EVENTS` across those workers, writes per-worker logs
+under `data_process/<tag>/g4psi_chunks/`, merges chunk ROOT files into the
+normal `*_g4psi.root`, then deletes successful chunk ROOT files. Chunk logs are
+kept. Direct non-Slurm runs default to one g4PSI worker unless
+`G4PSI_PARALLEL_TASKS` is set explicitly.
 
 Cooker stages use `SLURM_RECIPE_CONFIG` and currently run one output per stage.
 The shared parallel worker helper is in place for future cooker parallelization,
@@ -304,9 +306,9 @@ cd packman-muse
 ./scripts/pixi-local run -e batch bash ../src/shell/freeway/11_run_vertex.sh <pipeline-tag>
 ```
 
-`test_run.sh` is a manual sequential smoke runner. It is not the preferred
-cluster orchestrator, but it is useful for local debugging or for running a
-range of stages by hand.
+`test_run.sh` is a manual serial smoke runner for small sanity-check runs after
+installing the stack. It does not submit Slurm jobs and forces stage 00 g4PSI to
+one worker.
 
 ```bash
 bash test_run.sh <pipeline-tag>
@@ -317,6 +319,7 @@ STACK_DIR=/path/to/packman-muse bash test_run.sh <pipeline-tag>
 
 `START_STAGE` and `END_STAGE` are zero-based freeway item numbers. Defaults are
 `0` and `14`. The script runs through `STACK_DIR/scripts/pixi-local`.
+Use the Slurm orchestrator, not `test_run.sh`, for parallel production runs.
 
 ## Useful Checks
 
@@ -371,7 +374,7 @@ PIPELINE_TAG           selected run tag
 REAL_MUSE_REPO_ROOT    exported by Slurm jobs so they can find this checkout
 MUSE_INIT              optional override for cooker init XML
 MUSE_PIPELINE_TMPDIR   temp directory for cooker and ROOT validation files
-G4PSI_PARALLEL_TASKS   override stage-00 worker count for local/test runs
+G4PSI_PARALLEL_TASKS   opt-in override for direct stage-00 g4PSI worker count
 G4PSI_ENABLE_SRUN      truthy enables nested srun launcher inside g4PSI jobs
 G4PSI_STATUS_INTERVAL  seconds between g4PSI chunk status updates
 G4PSI_STATUS_PLAIN     truthy disables TTY cursor status updates

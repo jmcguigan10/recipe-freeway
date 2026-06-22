@@ -38,11 +38,14 @@ g4psi_integer_value() {
 g4psi_parallel_tasks() {
   local raw_tasks="${G4PSI_PARALLEL_TASKS:-}"
 
-  if [[ -z "$raw_tasks" ]]; then
+  if [[ -z "$raw_tasks" && -n "${SLURM_JOB_ID:-}" ]]; then
     raw_tasks="${SLURM_NTASKS:-}"
   fi
-  if [[ -z "$raw_tasks" ]]; then
+  if [[ -z "$raw_tasks" && -n "${SLURM_JOB_ID:-}" ]]; then
     raw_tasks="${sim_slurm_ntasks:-1}"
+  fi
+  if [[ -z "$raw_tasks" ]]; then
+    raw_tasks="1"
   fi
 
   g4psi_positive_int_value "g4PSI parallel task count" "$raw_tasks"

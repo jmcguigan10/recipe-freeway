@@ -91,6 +91,8 @@ for ((stage_index = start_stage; stage_index <= end_stage; stage_index++)); do
   printf '==> %02d %s\n' "$stage_index" "$stage_script"
   (
     cd "$stack_dir"
-    ./scripts/pixi-local run -e batch bash "$stage_path" "$tag"
+    G4PSI_PARALLEL_TASKS=1 \
+    G4PSI_ENABLE_SRUN=0 \
+      ./scripts/pixi-local run -e batch bash "$stage_path" "$tag"
   )
 done
