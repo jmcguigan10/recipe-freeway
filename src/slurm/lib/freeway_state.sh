@@ -110,14 +110,18 @@ freeway_slurm_resources_for_stage() {
   local stage="$1"
 
   if [[ "$stage" == "g4psi" ]]; then
+    freeway_slurm_account="$sim_slurm_account"
     freeway_slurm_partition="$sim_slurm_partition"
+    freeway_slurm_qos="$sim_slurm_qos"
     freeway_slurm_nodes="$sim_slurm_nodes"
     freeway_slurm_ntasks="$sim_slurm_ntasks"
     freeway_slurm_cpus_per_task="$sim_slurm_cpus_per_task"
     freeway_slurm_mem="$sim_slurm_mem"
     freeway_slurm_time="$sim_slurm_time"
   else
+    freeway_slurm_account="$recipe_slurm_account"
     freeway_slurm_partition="$recipe_slurm_partition"
+    freeway_slurm_qos="$recipe_slurm_qos"
     freeway_slurm_nodes="$recipe_slurm_nodes"
     freeway_slurm_ntasks="$recipe_slurm_ntasks"
     freeway_slurm_cpus_per_task="$recipe_slurm_cpus_per_task"
@@ -134,6 +138,7 @@ freeway_submit_stage() {
   local job_name
   local job_id
   local sbatch_bin
+  local -a sbatch_args
 
   item="$(printf '%02d' "$index")"
   log_dir="$data_run_dir/slurm"
@@ -143,19 +148,23 @@ freeway_submit_stage() {
   mkdir -p "$log_dir"
   freeway_slurm_resources_for_stage "$stage"
 
-  job_id="$("$sbatch_bin" \
-    --parsable \
-    --job-name="$job_name" \
-    --partition="$freeway_slurm_partition" \
-    --nodes="$freeway_slurm_nodes" \
-    --ntasks="$freeway_slurm_ntasks" \
-    --cpus-per-task="$freeway_slurm_cpus_per_task" \
-    --mem="$freeway_slurm_mem" \
-    --time="$freeway_slurm_time" \
-    --output="$log_dir/%x-%j.out" \
-    --error="$log_dir/%x-%j.err" \
-    --export=ALL,PIPELINE_TAG="$pipeline_tag",DATA_RUN_DIR="$data_run_dir",REAL_MUSE_REPO_ROOT="$repo_root" \
-    "$repo_root/src/slurm/freeway_stage_job.sh" "$item" "$pipeline_tag")"
+  sbatch_args=(
+    --parsable
+    --job-name="$job_name"
+    --partition="$freeway_slurm_partition"
+    --nodes="$freeway_slurm_nodes"
+    --ntasks="$freeway_slurm_ntasks"
+    --cpus-per-task="$freeway_slurm_cpus_per_task"
+    --mem="$freeway_slurm_mem"
+    --time="$freeway_slurm_time"
+    --output="$log_dir/%x-%j.out"
+    --error="$log_dir/%x-%j.err"
+    --export=ALL,PIPELINE_TAG="$pipeline_tag",DATA_RUN_DIR="$data_run_dir",REAL_MUSE_REPO_ROOT="$repo_root"
+  )
+  [[ -z "$freeway_slurm_account" ]] || sbatch_args+=(--account="$freeway_slurm_account")
+  [[ -z "$freeway_slurm_qos" ]] || sbatch_args+=(--qos="$freeway_slurm_qos")
+
+  job_id="$("$sbatch_bin" "${sbatch_args[@]}" "$repo_root/src/slurm/freeway_stage_job.sh" "$item" "$pipeline_tag")"
 
   freeway_mark_submitted "$item" "$stage" "$job_id"
   printf 'submitted %-2s %-14s job %s\n' "$item" "$stage" "$job_id"
