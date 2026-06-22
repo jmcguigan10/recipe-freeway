@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=muse-relay
-#SBATCH --partition=defq
+# Cluster account/partition/qos are selected in configs/slurm.sh and passed to sbatch at runtime.
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1

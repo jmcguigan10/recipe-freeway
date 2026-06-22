@@ -65,7 +65,7 @@ load_pipeline_configs() {
 
   reset_config_hashes
   for name in "${pipeline_config_names[@]}"; do
-    source_config_file "$name"
+    source_config_file "$name" || return $?
   done
 }
 
@@ -108,18 +108,33 @@ apply_physics_config() {
   RAD_MODE="$rad_mode"
 }
 
+validate_slurm_mem() {
+  local name="$1"
+  local value="$2"
+
+  [[ "$value" =~ ^[1-9][0-9]*[KMGT]$ ]] || \
+    die "$name must include a Slurm memory unit like 16000M, 16G, or 1T: $value"
+}
+
 apply_slurm_config() {
+  sim_slurm_account="${SLURM_SIM_CONFIG[ACCOUNT]:-}"
   sim_slurm_partition="${SLURM_SIM_CONFIG[PARTITION]:-defq}"
+  sim_slurm_qos="${SLURM_SIM_CONFIG[QOS]:-}"
   sim_slurm_nodes="${SLURM_SIM_CONFIG[NODES]:-1}"
   sim_slurm_ntasks="${SLURM_SIM_CONFIG[NTASKS]:-1}"
   sim_slurm_cpus_per_task="${SLURM_SIM_CONFIG[CPUS_PER_TASK]:-1}"
   sim_slurm_mem="${SLURM_SIM_CONFIG[MEM]:-16G}"
   sim_slurm_time="${SLURM_SIM_CONFIG[TIME]:-12:00:00}"
 
+  recipe_slurm_account="${SLURM_RECIPE_CONFIG[ACCOUNT]:-}"
   recipe_slurm_partition="${SLURM_RECIPE_CONFIG[PARTITION]:-defq}"
+  recipe_slurm_qos="${SLURM_RECIPE_CONFIG[QOS]:-}"
   recipe_slurm_nodes="${SLURM_RECIPE_CONFIG[NODES]:-1}"
   recipe_slurm_ntasks="${SLURM_RECIPE_CONFIG[NTASKS]:-1}"
   recipe_slurm_cpus_per_task="${SLURM_RECIPE_CONFIG[CPUS_PER_TASK]:-1}"
   recipe_slurm_mem="${SLURM_RECIPE_CONFIG[MEM]:-16G}"
   recipe_slurm_time="${SLURM_RECIPE_CONFIG[TIME]:-12:00:00}"
+
+  validate_slurm_mem "SLURM_SIM_CONFIG[MEM]" "$sim_slurm_mem"
+  validate_slurm_mem "SLURM_RECIPE_CONFIG[MEM]" "$recipe_slurm_mem"
 }

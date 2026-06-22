@@ -85,17 +85,21 @@ render_g4psi_macro() {
 run_g4psi_macro() {
   local macro_path="${1:-$generated_macro}"
   local launcher=()
+  local launcher_mode="direct"
 
-  if [[ -n "${SLURM_JOB_ID:-}" ]] && ! is_truthy "${G4PSI_DISABLE_SRUN:-0}" && command -v srun >/dev/null 2>&1; then
+  if [[ -n "${SLURM_JOB_ID:-}" ]] && is_truthy "${G4PSI_ENABLE_SRUN:-0}" && command -v srun >/dev/null 2>&1; then
     case "${SLURM_STEP_ID:-}" in
       ""|batch|extern)
-        launcher=(srun --exclusive --nodes=1 --ntasks=1 --cpus-per-task="${SLURM_CPUS_PER_TASK:-1}")
+        launcher=(srun --overlap --exact --nodes=1 --ntasks=1 --cpus-per-task="${SLURM_CPUS_PER_TASK:-1}")
+        launcher_mode="srun --overlap --exact"
         ;;
       *)
         echo "Detected active Slurm step ${SLURM_STEP_ID}; running g4PSI directly to avoid a nested srun step."
         ;;
     esac
   fi
+
+  echo "g4PSI launcher: $launcher_mode"
 
   with_dir "$stack_dir" \
     "${launcher[@]}" \
