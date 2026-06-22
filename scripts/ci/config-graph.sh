@@ -73,7 +73,7 @@ done
 
 for name in SLURM_SIM_CONFIG SLURM_RECIPE_CONFIG; do
   mem="$(eval "printf '%s' \"\${${name}[MEM]:-}\"")"
-  [[ "$mem" =~ ^[1-9][0-9]*[KMGT]$ ]] || fail "${name}[MEM] must include a Slurm memory unit: $mem"
+  [[ "$mem" =~ ^[1-9][0-9]*([KMGT])?$ ]] || fail "${name}[MEM] must be a positive integer with optional Slurm memory unit: $mem"
 
   ntasks="$(eval "printf '%s' \"\${${name}[NTASKS]:-}\"")"
   [[ "$ntasks" =~ ^[1-9][0-9]*$ ]] || fail "${name}[NTASKS] must be a positive integer: $ntasks"

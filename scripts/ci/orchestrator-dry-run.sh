@@ -44,7 +44,7 @@ grep -q 'Summary: 1 submitted' "$output_log"
 
 grep -q '^--job-name=freeway_00_g4psi_ci_pr_dry_run$' "$fake_log"
 grep -q '^--ntasks=100$' "$fake_log"
-grep -q '^--mem=16G$' "$fake_log"
+grep -q '^--mem=16$' "$fake_log"
 grep -q '/src/slurm/freeway_stage_job.sh$' "$fake_log"
 grep -q '^00$' "$fake_log"
 grep -q '^ci_pr_dry_run$' "$fake_log"

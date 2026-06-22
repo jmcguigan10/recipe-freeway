@@ -114,8 +114,8 @@ validate_slurm_mem() {
   local name="$1"
   local value="$2"
 
-  [[ "$value" =~ ^[1-9][0-9]*[KMGT]$ ]] || \
-    die "$name must include a Slurm memory unit like 16000M, 16G, or 1T: $value"
+  [[ "$value" =~ ^[1-9][0-9]*([KMGT])?$ ]] || \
+    die "$name must be a positive integer with optional Slurm memory unit like 16, 16000M, 16G, or 1T: $value"
 }
 
 apply_slurm_config() {
@@ -125,7 +125,7 @@ apply_slurm_config() {
   sim_slurm_nodes="${SLURM_SIM_CONFIG[NODES]:-1}"
   sim_slurm_ntasks="${SLURM_SIM_CONFIG[NTASKS]:-1}"
   sim_slurm_cpus_per_task="${SLURM_SIM_CONFIG[CPUS_PER_TASK]:-1}"
-  sim_slurm_mem="${SLURM_SIM_CONFIG[MEM]:-16G}"
+  sim_slurm_mem="${SLURM_SIM_CONFIG[MEM]:-16}"
   sim_slurm_time="${SLURM_SIM_CONFIG[TIME]:-12:00:00}"
 
   recipe_slurm_account="${SLURM_RECIPE_CONFIG[ACCOUNT]:-}"
@@ -134,7 +134,7 @@ apply_slurm_config() {
   recipe_slurm_nodes="${SLURM_RECIPE_CONFIG[NODES]:-1}"
   recipe_slurm_ntasks="${SLURM_RECIPE_CONFIG[NTASKS]:-1}"
   recipe_slurm_cpus_per_task="${SLURM_RECIPE_CONFIG[CPUS_PER_TASK]:-1}"
-  recipe_slurm_mem="${SLURM_RECIPE_CONFIG[MEM]:-16G}"
+  recipe_slurm_mem="${SLURM_RECIPE_CONFIG[MEM]:-16}"
   recipe_slurm_time="${SLURM_RECIPE_CONFIG[TIME]:-12:00:00}"
 
   validate_slurm_mem "SLURM_SIM_CONFIG[MEM]" "$sim_slurm_mem"

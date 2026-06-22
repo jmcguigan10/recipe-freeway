@@ -79,7 +79,9 @@ cluster usually needs these changes:
 1. Edit `configs/slurm.sh`.
    - Set `PARTITION`, and add `ACCOUNT` or `QOS` keys if your cluster requires
      them.
-   - Keep memory values with Slurm units, such as `16000M`, `16G`, or `1T`.
+   - `MEM` is passed directly to `sbatch --mem`; use the syntax your cluster
+     expects. Isaac should use values like `16G`, while other clusters may
+     prefer bare values like `16`.
    - `SLURM_SIM_CONFIG` is used for stage 00 g4PSI.
    - `SLURM_RECIPE_CONFIG` is used for cooker stages 01-14.
 2. Put output on cluster storage if needed:
