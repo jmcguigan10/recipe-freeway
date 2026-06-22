@@ -1,0 +1,37 @@
+name: PR checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  lightweight-ci:
+    name: Stack-free repository checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check for merge conflict markers
+        run: bash scripts/ci/check-conflicts.sh
+
+      - name: Check shell syntax
+        run: bash scripts/ci/shell-syntax.sh
+
+      - name: Check Python syntax
+        run: bash scripts/ci/python-syntax.sh
+
+      - name: Check Ruby syntax
+        run: bash scripts/ci/ruby-syntax.sh
+
+      - name: Check pipeline config graph
+        run: bash scripts/ci/config-graph.sh
+
+      - name: Dry-run Slurm orchestrator
+        run: bash scripts/ci/orchestrator-dry-run.sh

@@ -13,6 +13,6 @@ declare -gA SLURM_RECIPE_CONFIG=(
   [NODES]="1"
   [NTASKS]="1"
   [CPUS_PER_TASK]="1"
-  [MEM]="16G"
+  [MEM]="16"
   [TIME]="12:00:00"
 )
