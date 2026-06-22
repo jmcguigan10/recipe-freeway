@@ -20,6 +20,7 @@ source configs/g4psi.sh
 source configs/recipes.sh
 source src/shell/lib/errors.sh
 source src/shell/lib/orchs/g4psi.func.sh
+source src/shell/lib/orchs/cooker.func.sh
 
 check_g4psi_parallel_task_selection() {
   local actual
@@ -50,6 +51,44 @@ check_g4psi_parallel_task_selection() {
   sim_slurm_ntasks=5
   actual="$(g4psi_parallel_tasks)"
   [[ "$actual" == "5" ]] || fail "Slurm g4PSI runs should fall back to sim_slurm_ntasks, got $actual"
+
+  unset SLURM_JOB_ID
+}
+
+check_cooker_parallel_task_selection() {
+  local actual
+
+  grep -q 'COOKER_PARALLEL_TASKS=1' test_run.sh || fail "test_run.sh must force serial cooker stages"
+  if grep -q 'COOKER_PARALLEL_TASKS=.*COOKER_PARALLEL_TASKS' test_run.sh; then
+    fail "test_run.sh must not pass through caller-provided COOKER_PARALLEL_TASKS"
+  fi
+
+  unset COOKER_PARALLEL_TASKS
+  unset SLURM_JOB_ID
+  unset SLURM_NTASKS
+  recipe_slurm_ntasks=100
+  actual="$(cooker_parallel_tasks mc2root)"
+  [[ "$actual" == "1" ]] || fail "direct cooker runs must default to 1 task, got $actual"
+
+  FREEWAY_STAGE_PARALLEL_TASKS[bh]=2
+  actual="$(cooker_parallel_tasks bh)"
+  [[ "$actual" == "2" ]] || fail "per-stage cooker parallel override should win, got $actual"
+  unset 'FREEWAY_STAGE_PARALLEL_TASKS[bh]'
+
+  COOKER_PARALLEL_TASKS=3
+  actual="$(cooker_parallel_tasks mc2root)"
+  [[ "$actual" == "3" ]] || fail "COOKER_PARALLEL_TASKS override should win, got $actual"
+  unset COOKER_PARALLEL_TASKS
+
+  SLURM_JOB_ID=123
+  SLURM_NTASKS=4
+  actual="$(cooker_parallel_tasks mc2root)"
+  [[ "$actual" == "4" ]] || fail "Slurm cooker runs should use SLURM_NTASKS, got $actual"
+  unset SLURM_NTASKS
+
+  recipe_slurm_ntasks=5
+  actual="$(cooker_parallel_tasks mc2root)"
+  [[ "$actual" == "5" ]] || fail "Slurm cooker runs should fall back to recipe_slurm_ntasks, got $actual"
 
   unset SLURM_JOB_ID
 }
@@ -105,6 +144,10 @@ done
 for stage in "${!FREEWAY_STAGE_REPORT_PAYLOAD[@]}"; do
   [[ -n "${stage_seen[$stage]:-}" ]] || fail "FREEWAY_STAGE_REPORT_PAYLOAD has unknown stage: $stage"
 done
+for stage in "${!FREEWAY_STAGE_PARALLEL_TASKS[@]}"; do
+  [[ -n "${stage_seen[$stage]:-}" ]] || fail "FREEWAY_STAGE_PARALLEL_TASKS has unknown stage: $stage"
+  [[ "${FREEWAY_STAGE_PARALLEL_TASKS[$stage]}" =~ ^[1-9][0-9]*$ ]] || fail "FREEWAY_STAGE_PARALLEL_TASKS[$stage] must be a positive integer: ${FREEWAY_STAGE_PARALLEL_TASKS[$stage]}"
+done
 
 for name in SLURM_SIM_CONFIG SLURM_RECIPE_CONFIG; do
   mem="$(eval "printf '%s' \"\${${name}[MEM]:-}\"")"
@@ -127,6 +170,8 @@ case "$store_t0" in
 esac
 
 grep -q 'source_project_lib parallel.sh' src/shell/lib/loader.sh || fail "loader.sh must load parallel.sh"
+[[ -f src/python/root_tree_entries.py ]] || fail "missing root_tree_entries.py helper"
 check_g4psi_parallel_task_selection
+check_cooker_parallel_task_selection
 
 echo "Config graph OK: ${#FREEWAY_STAGE_ORDER[@]} stages"

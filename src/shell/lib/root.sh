@@ -23,6 +23,41 @@ stage_input_roots() {
   join_by ":" "${roots[@]}"
 }
 
+stage_primary_input_stage() {
+  local stage="$1"
+  local input_stage
+
+  read -r input_stage _ <<< "${FREEWAY_STAGE_INPUTS[$stage]:-}"
+  [[ -n "$input_stage" ]] || {
+    echo "stage has no configured input stages: $stage" >&2
+    return 1
+  }
+  printf '%s\n' "$input_stage"
+}
+
+stage_primary_input_root() {
+  local stage="$1"
+  local input_stage
+
+  input_stage="$(stage_primary_input_stage "$stage")" || return $?
+  stage_output_root "$input_stage"
+}
+
+stage_primary_input_tree() {
+  local stage="$1"
+  local input_stage
+
+  input_stage="$(stage_primary_input_stage "$stage")" || return $?
+  printf '%s\n' "${FREEWAY_STAGE_TREE[$input_stage]}"
+}
+
+root_tree_entries() {
+  local root_file="$1"
+  local tree_name="$2"
+
+  run_stack_python "$repo_root/src/python/root_tree_entries.py" "$root_file" "$tree_name"
+}
+
 particle_pid_for() {
   local particle_name="$1"
 

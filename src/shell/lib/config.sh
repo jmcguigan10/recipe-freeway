@@ -16,6 +16,7 @@ reset_config_hashes() {
   unset FREEWAY_STAGE_INIT
   unset FREEWAY_STAGE_COOKER_CALLS
   unset FREEWAY_STAGE_REPORT_PAYLOAD
+  unset FREEWAY_STAGE_PARALLEL_TASKS
 
   FREEWAY_STAGE_ORDER=()
 
@@ -31,6 +32,7 @@ reset_config_hashes() {
   declare -gA FREEWAY_STAGE_INIT
   declare -gA FREEWAY_STAGE_COOKER_CALLS
   declare -gA FREEWAY_STAGE_REPORT_PAYLOAD
+  declare -gA FREEWAY_STAGE_PARALLEL_TASKS
 }
 
 require_config_file() {

@@ -23,7 +23,7 @@ recipe-freeway/
   src/shell/               stage runners and shared shell library
   src/slurm/               Slurm freeway orchestrator
   templates/g4psi/         g4PSI macro template
-  test_run.sh              manual sequential smoke runner
+  test_run.sh              manual serial smoke runner
 ```
 
 Default paths are:
@@ -118,7 +118,7 @@ Pipeline defaults live in `configs/*.sh`:
 configs/physics.sh   run number, particle, momentum, event count, seeds, RadGen, T0
 configs/g4psi.sh     g4PSI macro template and generated macro directory
 configs/slurm.sh     Slurm resources for simulation and recipe stages
-configs/recipes.sh   stage graph, recipes, inputs, outputs, trees, cooker calls
+configs/recipes.sh   stage graph, recipes, inputs, outputs, trees, cooker calls, overrides
 ```
 
 Important `configs/physics.sh` keys:
@@ -144,6 +144,7 @@ Important `configs/recipes.sh` behavior:
 - `FREEWAY_STAGE_INPUTS` controls dependencies.
 - `FREEWAY_STAGE_TREE` is the expected output tree for validation.
 - `FREEWAY_STAGE_COOKER_CALLS` adds required plugin calls.
+- `FREEWAY_STAGE_PARALLEL_TASKS` can override cooker worker count for a stage.
 
 The BH momentum call is required for the current simulated positron workflow:
 
@@ -251,9 +252,14 @@ normal `*_g4psi.root`, then deletes successful chunk ROOT files. Chunk logs are
 kept. Direct non-Slurm runs default to one g4PSI worker unless
 `G4PSI_PARALLEL_TASKS` is set explicitly.
 
-Cooker stages use `SLURM_RECIPE_CONFIG` and currently run one output per stage.
-The shared parallel worker helper is in place for future cooker parallelization,
-but cooker stages are not parallelized by default.
+Cooker stages use `SLURM_RECIPE_CONFIG`. Under Slurm, each cooker stage is still
+one Slurm job, but that job can split its primary input tree across
+`SLURM_RECIPE_CONFIG[NTASKS]` cooker workers. Workers run contiguous
+`--start/--num` entry ranges, write chunk outputs under
+`data_process/<tag>/cooker_chunks/<stage>/`, and merge back to the normal
+`*_stage.root` output before downstream stages can run. Set
+`FREEWAY_STAGE_PARALLEL_TASKS[stage]` in `configs/recipes.sh` to override a
+specific cooker stage.
 
 Stage logs go to:
 
@@ -307,8 +313,8 @@ cd packman-muse
 ```
 
 `test_run.sh` is a manual serial smoke runner for small sanity-check runs after
-installing the stack. It does not submit Slurm jobs and forces stage 00 g4PSI to
-one worker.
+installing the stack. It does not submit Slurm jobs and forces stage 00 g4PSI
+and all cooker stages to one worker.
 
 ```bash
 bash test_run.sh <pipeline-tag>
@@ -378,6 +384,9 @@ G4PSI_PARALLEL_TASKS   opt-in override for direct stage-00 g4PSI worker count
 G4PSI_ENABLE_SRUN      truthy enables nested srun launcher inside g4PSI jobs
 G4PSI_STATUS_INTERVAL  seconds between g4PSI chunk status updates
 G4PSI_STATUS_PLAIN     truthy disables TTY cursor status updates
+COOKER_PARALLEL_TASKS  opt-in override for direct cooker worker count
+COOKER_STATUS_INTERVAL seconds between cooker chunk status updates
+COOKER_STATUS_PLAIN    truthy disables TTY cursor status updates
 FREEWAY_SBATCH_BIN     override sbatch for testing
 ```
 

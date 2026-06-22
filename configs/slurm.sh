@@ -11,6 +11,7 @@ declare -gA SLURM_SIM_CONFIG=(
 declare -gA SLURM_RECIPE_CONFIG=(
   [PARTITION]="defq"
   [NODES]="1"
+  # Cooker stages run one cooker process per task and split their primary input tree.
   [NTASKS]="1"
   [CPUS_PER_TASK]="1"
   [MEM]="16"

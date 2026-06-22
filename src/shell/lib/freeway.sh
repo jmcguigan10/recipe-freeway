@@ -68,7 +68,7 @@ run_freeway_recipe_stage() {
 
   describe_freeway_stage "$stage" "$recipe" "$input_roots" "$output_root"
 
-  run_cooker_root "$output_root" "$expected_tree" \
+  run_cooker_stage_root "$stage" "$output_root" "$expected_tree" \
     "$recipe" "${cooker_args[@]}"
 
   report_spec="${FREEWAY_STAGE_REPORT_PAYLOAD[$stage]:-}"

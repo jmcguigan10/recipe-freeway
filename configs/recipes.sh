@@ -127,3 +127,9 @@ declare -gA FREEWAY_STAGE_REPORT_PAYLOAD=(
   [bm]="BM BM_Hits hits"
   [veto]="VETO VETO_Hits hits"
 )
+
+# Optional per-stage cooker worker overrides. When unset, cooker stages use
+# SLURM_RECIPE_CONFIG[NTASKS] in Slurm jobs and one worker in direct runs.
+declare -gA FREEWAY_STAGE_PARALLEL_TASKS=(
+  # [stt]="1"
+)
