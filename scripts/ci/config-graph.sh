@@ -18,6 +18,41 @@ source configs/physics.sh
 source configs/slurm.sh
 source configs/g4psi.sh
 source configs/recipes.sh
+source src/shell/lib/errors.sh
+source src/shell/lib/orchs/g4psi.func.sh
+
+check_g4psi_parallel_task_selection() {
+  local actual
+
+  grep -q 'G4PSI_PARALLEL_TASKS=1' test_run.sh || fail "test_run.sh must force serial g4PSI"
+  if grep -q 'G4PSI_PARALLEL_TASKS=.*G4PSI_PARALLEL_TASKS' test_run.sh; then
+    fail "test_run.sh must not pass through caller-provided G4PSI_PARALLEL_TASKS"
+  fi
+
+  unset G4PSI_PARALLEL_TASKS
+  unset SLURM_JOB_ID
+  unset SLURM_NTASKS
+  sim_slurm_ntasks=100
+  actual="$(g4psi_parallel_tasks)"
+  [[ "$actual" == "1" ]] || fail "direct g4PSI runs must default to 1 task, got $actual"
+
+  G4PSI_PARALLEL_TASKS=3
+  actual="$(g4psi_parallel_tasks)"
+  [[ "$actual" == "3" ]] || fail "G4PSI_PARALLEL_TASKS override should win, got $actual"
+  unset G4PSI_PARALLEL_TASKS
+
+  SLURM_JOB_ID=123
+  SLURM_NTASKS=4
+  actual="$(g4psi_parallel_tasks)"
+  [[ "$actual" == "4" ]] || fail "Slurm g4PSI runs should use SLURM_NTASKS, got $actual"
+  unset SLURM_NTASKS
+
+  sim_slurm_ntasks=5
+  actual="$(g4psi_parallel_tasks)"
+  [[ "$actual" == "5" ]] || fail "Slurm g4PSI runs should fall back to sim_slurm_ntasks, got $actual"
+
+  unset SLURM_JOB_ID
+}
 
 [[ ${#FREEWAY_STAGE_ORDER[@]} -gt 0 ]] || fail "FREEWAY_STAGE_ORDER is empty"
 
@@ -92,5 +127,6 @@ case "$store_t0" in
 esac
 
 grep -q 'source_project_lib parallel.sh' src/shell/lib/loader.sh || fail "loader.sh must load parallel.sh"
+check_g4psi_parallel_task_selection
 
 echo "Config graph OK: ${#FREEWAY_STAGE_ORDER[@]} stages"
