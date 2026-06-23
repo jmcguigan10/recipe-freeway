@@ -157,6 +157,7 @@ declare -gA FREEWAY_STAGE_INIT=(
   [bm]="env:MUSE_INIT:muse:init/all.xml"
   [veto]="env:MUSE_INIT:muse:init/all.xml"
   [tcpv]="env:MUSE_INIT:muse:init/all.xml"
+  [stt]="env:MUSE_INIT:muse:init/all.xml"
   [gem_hits]="muse:init/all.xml"
 )
 

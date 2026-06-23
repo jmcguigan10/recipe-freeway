@@ -145,7 +145,7 @@ merge_root_files() {
   mkdir -p "$output_dir"
   tmp_root="$(mktemp "$output_dir/.${output_base}.merge.tmp.XXXXXX")"
 
-  if run_stack_command hadd -f "$tmp_root" "$@"; then
+  if run_stack_command bash "$project_helper_dir/run-with-g4-preload.sh" "$muse_src_dir" hadd -f "$tmp_root" "$@"; then
     :
   else
     rc=$?

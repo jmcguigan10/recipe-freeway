@@ -61,6 +61,44 @@ check_no_cooker_parallel_knob() {
   [[ -z "$matches" ]] || fail "COOKER_PARALLEL references should not exist: $matches"
 }
 
+slurm_cluster_values() {
+  local cluster="$1"
+
+  SLURM_CLUSTER="$cluster" "$BASH" -c '
+    set -Eeuo pipefail
+    cd "$1"
+    source configs/slurm.sh
+    printf "%s|%s|%s|%s|%s|%s|%s|%s\n" \
+      "${SLURM_SIM_CONFIG[ACCOUNT]:-}" \
+      "${SLURM_SIM_CONFIG[PARTITION]:-}" \
+      "${SLURM_SIM_CONFIG[QOS]:-}" \
+      "${SLURM_SIM_CONFIG[NTASKS]:-}" \
+      "${SLURM_RECIPE_CONFIG[ACCOUNT]:-}" \
+      "${SLURM_RECIPE_CONFIG[PARTITION]:-}" \
+      "${SLURM_RECIPE_CONFIG[QOS]:-}" \
+      "${SLURM_RECIPE_CONFIG[NTASKS]:-}"
+  ' -- "$repo_root"
+}
+
+check_slurm_cluster_config() {
+  local actual
+  local invalid_output
+
+  actual="$(slurm_cluster_values isaac)" || fail "SLURM_CLUSTER=isaac should load"
+  [[ "$actual" == "isaac-utk0307|condo-slagergr|condo|4|isaac-utk0307|condo-slagergr|condo|1" ]] || \
+    fail "unexpected ISAAC Slurm config: $actual"
+
+  actual="$(slurm_cluster_values theia)" || fail "SLURM_CLUSTER=theia should load"
+  [[ "$actual" == "|defq||4||defq||1" ]] || \
+    fail "unexpected Theia Slurm config: $actual"
+
+  if invalid_output="$(slurm_cluster_values invalid 2>&1)"; then
+    fail "invalid Slurm cluster should fail"
+  fi
+  [[ "$invalid_output" == *"unknown SLURM_CLUSTER: invalid"* ]] || \
+    fail "invalid Slurm cluster error was unclear: $invalid_output"
+}
+
 [[ ${#FREEWAY_STAGE_ORDER[@]} -gt 0 ]] || fail "FREEWAY_STAGE_ORDER is empty"
 
 expected_stage_order=(
@@ -197,5 +235,6 @@ esac
 grep -q 'source_project_lib parallel.sh' src/shell/lib/loader.sh || fail "loader.sh must load parallel.sh"
 check_g4psi_parallel_task_selection
 check_no_cooker_parallel_knob
+check_slurm_cluster_config
 
 echo "Config graph OK: ${#FREEWAY_STAGE_ORDER[@]} stages"
