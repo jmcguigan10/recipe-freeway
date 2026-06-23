@@ -1,5 +1,6 @@
 FREEWAY_STAGE_ORDER=(
   g4psi
+  hazard_truth
   mc2root
   bh
   sps
@@ -14,28 +15,58 @@ FREEWAY_STAGE_ORDER=(
   pathlength
   pbglass
   cross_section
+  export_cs_events
+  hazard_cutflow
+  export_training_table
+)
+
+declare -gA FREEWAY_STAGE_KIND=(
+  [g4psi]="g4psi"
+  [hazard_truth]="helper"
+  [mc2root]="cooker"
+  [bh]="cooker"
+  [sps]="cooker"
+  [bm]="cooker"
+  [veto]="cooker"
+  [tcpv]="cooker"
+  [stt]="cooker"
+  [gem_hits]="cooker"
+  [gem_tracks]="cooker"
+  [tracklets]="cooker"
+  [vertex]="cooker"
+  [pathlength]="cooker"
+  [pbglass]="cooker"
+  [cross_section]="cooker"
+  [export_cs_events]="helper"
+  [hazard_cutflow]="helper"
+  [export_training_table]="helper"
 )
 
 declare -gA FREEWAY_STAGE_SCRIPT=(
   [g4psi]="00_run_g4psi.sh"
-  [mc2root]="01_run_mc2root.sh"
-  [bh]="02_run_bh.sh"
-  [sps]="03_run_sps.sh"
-  [bm]="04_run_bm.sh"
-  [veto]="05_run_veto.sh"
-  [tcpv]="06_run_tcpv.sh"
-  [stt]="07_run_stt.sh"
-  [gem_hits]="08_run_gem_hits.sh"
-  [gem_tracks]="09_run_gem_tracks.sh"
-  [tracklets]="10_run_tracklets.sh"
-  [vertex]="11_run_vertex.sh"
-  [pathlength]="12_run_path_length.sh"
-  [pbglass]="13_run_pbglass.sh"
-  [cross_section]="14_run_cs.sh"
+  [hazard_truth]="01_run_hazard_truth.sh"
+  [mc2root]="02_run_mc2root.sh"
+  [bh]="03_run_bh.sh"
+  [sps]="04_run_sps.sh"
+  [bm]="05_run_bm.sh"
+  [veto]="06_run_veto.sh"
+  [tcpv]="07_run_tcpv.sh"
+  [stt]="08_run_stt.sh"
+  [gem_hits]="09_run_gem_hits.sh"
+  [gem_tracks]="10_run_gem_tracks.sh"
+  [tracklets]="11_run_tracklets.sh"
+  [vertex]="12_run_vertex.sh"
+  [pathlength]="13_run_path_length.sh"
+  [pbglass]="14_run_pbglass.sh"
+  [cross_section]="15_run_cs.sh"
+  [export_cs_events]="16_run_export_cs_events.sh"
+  [hazard_cutflow]="17_run_hazard_cutflow.sh"
+  [export_training_table]="18_run_export_training_table.sh"
 )
 
 declare -gA FREEWAY_STAGE_OUTPUT=(
   [g4psi]="g4psi"
+  [hazard_truth]="hazard_truth"
   [mc2root]="mmt"
   [bh]="bh"
   [sps]="sps"
@@ -50,10 +81,19 @@ declare -gA FREEWAY_STAGE_OUTPUT=(
   [pathlength]="pathlength"
   [pbglass]="pbglass"
   [cross_section]="cross_section"
+  [export_cs_events]="cross_section_events"
+  [hazard_cutflow]="hazard_cutflow"
+  [export_training_table]="training_candidates"
+)
+
+declare -gA FREEWAY_STAGE_OUTPUT_EXT=(
+  [export_cs_events]="csv"
+  [export_training_table]="parquet"
 )
 
 declare -gA FREEWAY_STAGE_TREE=(
   [g4psi]="T"
+  [hazard_truth]="hazard_truth"
   [mc2root]="MMT"
   [bh]="BH"
   [sps]="SPS"
@@ -68,6 +108,7 @@ declare -gA FREEWAY_STAGE_TREE=(
   [pathlength]="PathLength"
   [pbglass]="PbGlass"
   [cross_section]="cs"
+  [hazard_cutflow]="hazard_cutflow"
 )
 
 declare -gA FREEWAY_STAGE_RECIPE=(
@@ -89,6 +130,7 @@ declare -gA FREEWAY_STAGE_RECIPE=(
 )
 
 declare -gA FREEWAY_STAGE_INPUTS=(
+  [hazard_truth]="g4psi"
   [mc2root]="g4psi"
   [bh]="mc2root"
   [sps]="mc2root"
@@ -103,6 +145,9 @@ declare -gA FREEWAY_STAGE_INPUTS=(
   [pathlength]="bh gem_tracks tracklets sps vertex"
   [pbglass]="mc2root bh bm veto"
   [cross_section]="pathlength mc2root bh bm sps pbglass gem_tracks veto tcpv"
+  [export_cs_events]="cross_section hazard_truth g4psi"
+  [hazard_cutflow]="hazard_truth export_cs_events"
+  [export_training_table]="hazard_truth hazard_cutflow export_cs_events"
 )
 
 declare -gA FREEWAY_STAGE_INIT=(

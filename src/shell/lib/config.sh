@@ -8,8 +8,10 @@ reset_config_hashes() {
   unset SLURM_SIM_CONFIG
   unset SLURM_RECIPE_CONFIG
   unset G4PSI_CONFIG
+  unset FREEWAY_STAGE_KIND
   unset FREEWAY_STAGE_SCRIPT
   unset FREEWAY_STAGE_OUTPUT
+  unset FREEWAY_STAGE_OUTPUT_EXT
   unset FREEWAY_STAGE_TREE
   unset FREEWAY_STAGE_RECIPE
   unset FREEWAY_STAGE_INPUTS
@@ -23,8 +25,10 @@ reset_config_hashes() {
   declare -gA SLURM_SIM_CONFIG
   declare -gA SLURM_RECIPE_CONFIG
   declare -gA G4PSI_CONFIG
+  declare -gA FREEWAY_STAGE_KIND
   declare -gA FREEWAY_STAGE_SCRIPT
   declare -gA FREEWAY_STAGE_OUTPUT
+  declare -gA FREEWAY_STAGE_OUTPUT_EXT
   declare -gA FREEWAY_STAGE_TREE
   declare -gA FREEWAY_STAGE_RECIPE
   declare -gA FREEWAY_STAGE_INPUTS

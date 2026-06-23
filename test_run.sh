@@ -10,11 +10,11 @@ Runs freeway stages sequentially through packman-muse/scripts/pixi-local.
 Environment:
   STACK_DIR    packman-muse checkout, default ./packman-muse
   START_STAGE  first zero-based freeway item to run, default 0
-  END_STAGE    last zero-based freeway item to run, default 14
+  END_STAGE    last zero-based freeway item to run, default 18
 
 Examples:
   bash test_run.sh mc22308_rad2_e_pos_part0
-  START_STAGE=7 END_STAGE=14 bash test_run.sh mc22308_rad2_e_pos_part0
+  START_STAGE=7 END_STAGE=18 bash test_run.sh mc22308_rad2_e_pos_part0
   STACK_DIR=/scratch/me/packman-muse bash test_run.sh mc22308_rad2_e_pos_part0
 USAGE
   exit 2
@@ -28,7 +28,7 @@ repo_root="$script_dir"
 stack_dir="${STACK_DIR:-$repo_root/packman-muse}"
 pixi_local="$stack_dir/scripts/pixi-local"
 start_stage="${START_STAGE:-0}"
-end_stage="${END_STAGE:-14}"
+end_stage="${END_STAGE:-18}"
 
 [[ "$tag" != */* ]] || {
   echo "Pipeline tag must be a name, not a path: $tag" >&2
@@ -54,20 +54,24 @@ end_stage="${END_STAGE:-14}"
 
 stage_scripts=(
   00_run_g4psi.sh
-  01_run_mc2root.sh
-  02_run_bh.sh
-  03_run_sps.sh
-  04_run_bm.sh
-  05_run_veto.sh
-  06_run_tcpv.sh
-  07_run_stt.sh
-  08_run_gem_hits.sh
-  09_run_gem_tracks.sh
-  10_run_tracklets.sh
-  11_run_vertex.sh
-  12_run_path_length.sh
-  13_run_pbglass.sh
-  14_run_cs.sh
+  01_run_hazard_truth.sh
+  02_run_mc2root.sh
+  03_run_bh.sh
+  04_run_sps.sh
+  05_run_bm.sh
+  06_run_veto.sh
+  07_run_tcpv.sh
+  08_run_stt.sh
+  09_run_gem_hits.sh
+  10_run_gem_tracks.sh
+  11_run_tracklets.sh
+  12_run_vertex.sh
+  13_run_path_length.sh
+  14_run_pbglass.sh
+  15_run_cs.sh
+  16_run_export_cs_events.sh
+  17_run_hazard_cutflow.sh
+  18_run_export_training_table.sh
 )
 
 ((end_stage < ${#stage_scripts[@]})) || {

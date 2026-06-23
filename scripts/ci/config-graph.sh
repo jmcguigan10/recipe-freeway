@@ -63,38 +63,94 @@ check_no_cooker_parallel_knob() {
 
 [[ ${#FREEWAY_STAGE_ORDER[@]} -gt 0 ]] || fail "FREEWAY_STAGE_ORDER is empty"
 
+expected_stage_order=(
+  g4psi
+  hazard_truth
+  mc2root
+  bh
+  sps
+  bm
+  veto
+  tcpv
+  stt
+  gem_hits
+  gem_tracks
+  tracklets
+  vertex
+  pathlength
+  pbglass
+  cross_section
+  export_cs_events
+  hazard_cutflow
+  export_training_table
+)
+
+[[ ${#FREEWAY_STAGE_ORDER[@]} -eq ${#expected_stage_order[@]} ]] || \
+  fail "FREEWAY_STAGE_ORDER must have ${#expected_stage_order[@]} stages"
+for index in "${!expected_stage_order[@]}"; do
+  [[ "${FREEWAY_STAGE_ORDER[$index]}" == "${expected_stage_order[$index]}" ]] || \
+    fail "stage $index should be ${expected_stage_order[$index]}, got ${FREEWAY_STAGE_ORDER[$index]}"
+done
+
 declare -A stage_seen=()
 declare -A stage_index_by_name=()
 
 for index in "${!FREEWAY_STAGE_ORDER[@]}"; do
   stage="${FREEWAY_STAGE_ORDER[$index]}"
+  item="$(printf '%02d' "$index")"
+  kind="${FREEWAY_STAGE_KIND[$stage]:-cooker}"
+  ext="${FREEWAY_STAGE_OUTPUT_EXT[$stage]:-root}"
+
   [[ -n "$stage" ]] || fail "empty stage name at index $index"
   [[ -z "${stage_seen[$stage]:-}" ]] || fail "duplicate stage in FREEWAY_STAGE_ORDER: $stage"
   stage_seen[$stage]=1
   stage_index_by_name[$stage]="$index"
 
+  case "$kind" in
+    g4psi|cooker|helper) ;;
+    *) fail "$stage has invalid FREEWAY_STAGE_KIND: $kind" ;;
+  esac
+  case "$ext" in
+    root|csv|parquet) ;;
+    *) fail "$stage has invalid FREEWAY_STAGE_OUTPUT_EXT: $ext" ;;
+  esac
+
+  [[ -n "${FREEWAY_STAGE_KIND[$stage]:-}" ]] || fail "$stage missing FREEWAY_STAGE_KIND"
   [[ -n "${FREEWAY_STAGE_SCRIPT[$stage]:-}" ]] || fail "$stage missing FREEWAY_STAGE_SCRIPT"
   [[ -f "src/shell/freeway/${FREEWAY_STAGE_SCRIPT[$stage]}" ]] || fail "$stage script not found: ${FREEWAY_STAGE_SCRIPT[$stage]}"
+  [[ "${FREEWAY_STAGE_SCRIPT[$stage]}" == "${item}_"* ]] || fail "$stage script must start with $item: ${FREEWAY_STAGE_SCRIPT[$stage]}"
   [[ -n "${FREEWAY_STAGE_OUTPUT[$stage]:-}" ]] || fail "$stage missing FREEWAY_STAGE_OUTPUT"
-  [[ -n "${FREEWAY_STAGE_TREE[$stage]:-}" ]] || fail "$stage missing FREEWAY_STAGE_TREE"
 
-  if [[ "$stage" != "g4psi" ]]; then
+  if [[ "$ext" == "root" ]]; then
+    [[ -n "${FREEWAY_STAGE_TREE[$stage]:-}" ]] || fail "$stage missing FREEWAY_STAGE_TREE"
+  fi
+
+  if [[ "$kind" == "cooker" ]]; then
     [[ -n "${FREEWAY_STAGE_RECIPE[$stage]:-}" ]] || fail "$stage missing FREEWAY_STAGE_RECIPE"
     [[ "${FREEWAY_STAGE_RECIPE[$stage]}" == muse:* ]] || fail "$stage recipe must use muse: prefix"
+  else
+    [[ -z "${FREEWAY_STAGE_RECIPE[$stage]:-}" ]] || fail "$stage must not have FREEWAY_STAGE_RECIPE"
   fi
 done
 
+for stage in "${!FREEWAY_STAGE_KIND[@]}"; do
+  [[ -n "${stage_seen[$stage]:-}" ]] || fail "FREEWAY_STAGE_KIND has unknown stage: $stage"
+done
 for stage in "${!FREEWAY_STAGE_SCRIPT[@]}"; do
   [[ -n "${stage_seen[$stage]:-}" ]] || fail "FREEWAY_STAGE_SCRIPT has unknown stage: $stage"
 done
 for stage in "${!FREEWAY_STAGE_OUTPUT[@]}"; do
   [[ -n "${stage_seen[$stage]:-}" ]] || fail "FREEWAY_STAGE_OUTPUT has unknown stage: $stage"
 done
+for stage in "${!FREEWAY_STAGE_OUTPUT_EXT[@]}"; do
+  [[ -n "${stage_seen[$stage]:-}" ]] || fail "FREEWAY_STAGE_OUTPUT_EXT has unknown stage: $stage"
+done
 for stage in "${!FREEWAY_STAGE_TREE[@]}"; do
   [[ -n "${stage_seen[$stage]:-}" ]] || fail "FREEWAY_STAGE_TREE has unknown stage: $stage"
 done
 for stage in "${!FREEWAY_STAGE_RECIPE[@]}"; do
   [[ -n "${stage_seen[$stage]:-}" ]] || fail "FREEWAY_STAGE_RECIPE has unknown stage: $stage"
+  [[ "${FREEWAY_STAGE_KIND[$stage]:-}" == "cooker" ]] || fail "$stage recipe belongs to non-cooker stage"
 done
 for stage in "${!FREEWAY_STAGE_INPUTS[@]}"; do
   [[ -n "${stage_seen[$stage]:-}" ]] || fail "FREEWAY_STAGE_INPUTS has unknown stage: $stage"

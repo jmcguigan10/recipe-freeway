@@ -6,9 +6,25 @@ stage_root() {
   printf '%s/%s_%s.root\n' "$data_run_dir" "$run_tag" "$suffix"
 }
 
+stage_path() {
+  local suffix="$1"
+  local ext="${2:-root}"
+  printf '%s/%s_%s.%s\n' "$data_run_dir" "$run_tag" "$suffix" "$ext"
+}
+
+stage_output_ext() {
+  local stage="$1"
+  printf '%s\n' "${FREEWAY_STAGE_OUTPUT_EXT[$stage]:-root}"
+}
+
+stage_output_path() {
+  local stage="$1"
+  stage_path "${FREEWAY_STAGE_OUTPUT[$stage]:-$stage}" "$(stage_output_ext "$stage")"
+}
+
 stage_output_root() {
   local stage="$1"
-  stage_root "${FREEWAY_STAGE_OUTPUT[$stage]:-$stage}"
+  stage_path "${FREEWAY_STAGE_OUTPUT[$stage]:-$stage}" root
 }
 
 stage_input_roots() {
@@ -17,6 +33,7 @@ stage_input_roots() {
   local roots=()
 
   for input_stage in ${FREEWAY_STAGE_INPUTS[$stage]:-}; do
+    [[ "$(stage_output_ext "$input_stage")" == "root" ]] || continue
     roots+=("$(stage_output_root "$input_stage")")
   done
 
