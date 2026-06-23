@@ -4,7 +4,13 @@ set -Eeuo pipefail
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 cd "$repo_root"
 
-git ls-files '*.sh' 'configs/*.sh' | sort -u | while IFS= read -r file; do
+git ls-files --cached --others --exclude-standard '*.sh' 'configs/*.sh' |
+  while IFS= read -r file; do
+    [[ -f "$file" ]] || continue
+    printf '%s\n' "$file"
+  done |
+  sort -u |
+  while IFS= read -r file; do
   case "$file" in
     src/slurm/samples/*)
       continue

@@ -36,10 +36,10 @@ chmod +x "$fake_sbatch"
 FAKE_SBATCH_LOG="$fake_log" \
 DATA_ROOT="$data_root" \
 FREEWAY_SBATCH_BIN="$fake_sbatch" \
-  bash src/slurm/run_freeway.sh "$tag" > "$output_log"
+  "$BASH" src/slurm/run_freeway.sh "$tag" > "$output_log"
 
 grep -q 'submitted 00 g4psi' "$output_log"
-grep -q 'pending   01 mc2root' "$output_log"
+grep -q 'pending   01 hazard_truth' "$output_log"
 grep -q 'Summary: 1 submitted' "$output_log"
 
 grep -q '^--job-name=freeway_00_g4psi_ci_pr_dry_run$' "$fake_log"

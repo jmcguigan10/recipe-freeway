@@ -4,7 +4,13 @@ set -Eeuo pipefail
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 cd "$repo_root"
 
-files="$(git ls-files 'src/python/*.py' | sort)"
+files="$(
+  git ls-files --cached --others --exclude-standard 'src/python/*.py' |
+    while IFS= read -r file; do
+      [[ -f "$file" ]] && printf '%s\n' "$file"
+    done |
+    sort
+)"
 
 if [[ -z "$files" ]]; then
   echo "No Python files found."

@@ -140,9 +140,10 @@ The code intentionally passes `--T0`; `-T0` is not a valid g4PSI flag.
 
 Important `configs/recipes.sh` behavior:
 
-- `FREEWAY_STAGE_ORDER` defines stages 00-14.
+- `FREEWAY_STAGE_ORDER` defines stages 00-18.
 - `FREEWAY_STAGE_INPUTS` controls dependencies.
 - `FREEWAY_STAGE_TREE` is the expected output tree for validation.
+- `FREEWAY_STAGE_OUTPUT_EXT` marks helper stages whose primary output is not ROOT.
 - `FREEWAY_STAGE_COOKER_CALLS` adds required plugin calls.
 
 The BH momentum call is required for the current simulated positron workflow:
@@ -191,21 +192,28 @@ Example:
 mc22308_rad2_e_pos_part0
 ```
 
-Outputs are written as:
+Stage outputs are written under the selected run directory. Cooker stages use
+ROOT outputs:
 
 ```text
 data_process/<tag>/<tag>_<stage-output>.root
 ```
+
+Helper export stages may use `.csv`, `.json`, or `.parquet` outputs.
 
 Example:
 
 ```text
 data_process/mc22308_rad2_e_pos_part0/
   mc22308_rad2_e_pos_part0_g4psi.root
+  mc22308_rad2_e_pos_part0_hazard_truth.root
   mc22308_rad2_e_pos_part0_mmt.root
   mc22308_rad2_e_pos_part0_bh.root
   mc22308_rad2_e_pos_part0_vertex.root
   mc22308_rad2_e_pos_part0_cross_section.root
+  mc22308_rad2_e_pos_part0_cross_section_events.csv
+  mc22308_rad2_e_pos_part0_hazard_cutflow.root
+  mc22308_rad2_e_pos_part0_training_candidates.parquet
 ```
 
 Keep the tag consistent with `configs/physics.sh`; scripts do not derive the tag
@@ -215,23 +223,71 @@ from physics config values.
 
 The stage graph is defined in `configs/recipes.sh`.
 
-| Item | Stage | Output suffix | Tree | Inputs |
+| Item | Stage | Output | Tree/Data | Inputs |
 | --- | --- | --- | --- | --- |
-| 00 | `g4psi` | `g4psi` | `T` plus optional `T0` | none |
-| 01 | `mc2root` | `mmt` | `MMT` | `g4psi` |
-| 02 | `bh` | `bh` | `BH` | `mc2root` |
-| 03 | `sps` | `sps` | `SPS` | `mc2root` |
-| 04 | `bm` | `bm` | `BM` | `mc2root` |
-| 05 | `veto` | `veto` | `VETO` | `mc2root` |
-| 06 | `tcpv` | `tcpv` | `TCPV` | `mc2root` |
-| 07 | `stt` | `stt` | `STT` | `mc2root` |
-| 08 | `gem_hits` | `gem_hits` | `GEM` | `mc2root` |
-| 09 | `gem_tracks` | `gem_tracks` | `GEMTracks` | `gem_hits`, `bh` |
-| 10 | `tracklets` | `tracked` | `Tracked` | `bh`, `stt`, `sps` |
-| 11 | `vertex` | `vertex` | `Vertex` | `tracklets`, `bh`, `sps`, `gem_tracks`, `veto` |
-| 12 | `pathlength` | `pathlength` | `PathLength` | `bh`, `gem_tracks`, `tracklets`, `sps`, `vertex` |
-| 13 | `pbglass` | `pbglass` | `PbGlass` | `mc2root`, `bh`, `bm`, `veto` |
-| 14 | `cross_section` | `cross_section` | `cs` | `pathlength`, `mc2root`, `bh`, `bm`, `sps`, `pbglass`, `gem_tracks`, `veto`, `tcpv` |
+| 00 | `g4psi` | `g4psi.root` | `T` plus optional `T0` | none |
+| 01 | `hazard_truth` | `hazard_truth.root` | `hazard_truth` | `g4psi` |
+| 02 | `mc2root` | `mmt.root` | `MMT` | `g4psi` |
+| 03 | `bh` | `bh.root` | `BH` | `mc2root` |
+| 04 | `sps` | `sps.root` | `SPS` | `mc2root` |
+| 05 | `bm` | `bm.root` | `BM` | `mc2root` |
+| 06 | `veto` | `veto.root` | `VETO` | `mc2root` |
+| 07 | `tcpv` | `tcpv.root` | `TCPV` | `mc2root` |
+| 08 | `stt` | `stt.root` | `STT` | `mc2root` |
+| 09 | `gem_hits` | `gem_hits.root` | `GEM` | `mc2root` |
+| 10 | `gem_tracks` | `gem_tracks.root` | `GEMTracks` | `gem_hits`, `bh` |
+| 11 | `tracklets` | `tracked.root` | `Tracked` | `bh`, `stt`, `sps` |
+| 12 | `vertex` | `vertex.root` | `Vertex` | `tracklets`, `bh`, `sps`, `gem_tracks`, `veto` |
+| 13 | `pathlength` | `pathlength.root` | `PathLength` | `bh`, `gem_tracks`, `tracklets`, `sps`, `vertex` |
+| 14 | `pbglass` | `pbglass.root` | `PbGlass` | `mc2root`, `bh`, `bm`, `veto` |
+| 15 | `cross_section` | `cross_section.root` | `cs` | `pathlength`, `mc2root`, `bh`, `bm`, `sps`, `pbglass`, `gem_tracks`, `veto`, `tcpv` |
+| 16 | `export_cs_events` | `cross_section_events.csv` | accepted survivor rows | `cross_section`, `hazard_truth`, `g4psi` |
+| 17 | `hazard_cutflow` | `hazard_cutflow.root` | `hazard_cutflow` | `hazard_truth`, `export_cs_events` |
+| 18 | `export_training_table` | `training_candidates.parquet` | CSV/Parquet training tables | `hazard_truth`, `hazard_cutflow`, `export_cs_events` |
+
+### ML Export Tables
+
+`hazard_truth` is the denominator table. It reads `{tag}_g4psi.root` tree `T`
+and writes one row per g4PSI target-scatter candidate in `TGT_*` arrays:
+
+```text
+candidate_id, run_tag, event_number, event_index, target_index, event_weight,
+particle, particle_pid, momentum_mev, theta_deg, theta_bin,
+vertex_x_mm, vertex_y_mm, vertex_z_mm, truth_track_id, side,
+pass_truth, pass_sps_side_truth_hint
+```
+
+`candidate_id` is built as:
+
+```text
+run_tag:event_number:target_index:side:particle_pid
+```
+
+`event_weight` comes from `EventInfo.weight`, `theta_deg` comes from
+`TGT_Theta[target_index]`, and `pass_truth` currently means the truth candidate
+PID matches the configured `PARTICLE`.
+
+`hazard_cutflow` is the long-form survival table. It writes one row per
+candidate per stage:
+
+```text
+truth, sps_side, no_veto, bh_pid, lut5, gem_track, tracklet, vertex,
+tof, not_decay_or_rid, calo, doca, final_accept
+```
+
+Each row carries candidate identity plus:
+
+```text
+stage_order, stage_name, at_risk, passed, terminated, fail_reason,
+accepted_final, label_status
+```
+
+The exporter assigns exact final labels when `CSAcceptedEvents` rows can be
+joined back to unique truth candidates, or when the final accepted count is
+zero. Intermediate detector/reconstruction stages are marked `not_evaluated`
+for non-accepted candidates until stage-specific object matching is added; the
+exporter does not fabricate a detector failure label when the ROOT products do
+not identify one unambiguously.
 
 ## Running on Slurm
 
@@ -241,8 +297,8 @@ Use the dependency-aware freeway orchestrator for normal cluster work:
 bash src/slurm/run_freeway.sh <pipeline-tag>
 ```
 
-It creates `data_process/<tag>/`, snapshots configs, checks which stage ROOT
-files already exist, and submits every ready stage with `sbatch`.
+It creates `data_process/<tag>/`, snapshots configs, checks which stage outputs
+already exist, and submits every ready stage with `sbatch`.
 
 Under Slurm, stage 00 g4PSI uses `SLURM_SIM_CONFIG` and runs one worker per
 selected task. It splits `N_EVENTS` across those workers, writes per-worker logs
@@ -296,14 +352,14 @@ Individual stage scripts live in `src/shell/freeway/`. They can be run directly
 when required inputs already exist:
 
 ```bash
-bash src/shell/freeway/11_run_vertex.sh <pipeline-tag>
+bash src/shell/freeway/12_run_vertex.sh <pipeline-tag>
 ```
 
 When running on a system with the `packman-muse` Pixi stack, prefer:
 
 ```bash
 cd packman-muse
-./scripts/pixi-local run -e batch bash ../src/shell/freeway/11_run_vertex.sh <pipeline-tag>
+./scripts/pixi-local run -e batch bash ../src/shell/freeway/12_run_vertex.sh <pipeline-tag>
 ```
 
 `test_run.sh` is a manual serial smoke runner for small sanity-check runs after
@@ -313,12 +369,12 @@ one worker.
 ```bash
 bash test_run.sh <pipeline-tag>
 
-START_STAGE=7 END_STAGE=14 bash test_run.sh <pipeline-tag>
+START_STAGE=7 END_STAGE=18 bash test_run.sh <pipeline-tag>
 STACK_DIR=/path/to/packman-muse bash test_run.sh <pipeline-tag>
 ```
 
 `START_STAGE` and `END_STAGE` are zero-based freeway item numbers. Defaults are
-`0` and `14`. The script runs through `STACK_DIR/scripts/pixi-local`.
+`0` and `18`. The script runs through `STACK_DIR/scripts/pixi-local`.
 Use the Slurm orchestrator, not `test_run.sh`, for parallel production runs.
 
 ## Useful Checks
@@ -327,7 +383,7 @@ Check run status:
 
 ```bash
 cat data_process/<tag>/is_submitted.txt
-ls -lh data_process/<tag>/*.root
+ls -lh data_process/<tag>/*.{root,csv,json,parquet}
 ls -lh data_process/<tag>/slurm/
 ```
 

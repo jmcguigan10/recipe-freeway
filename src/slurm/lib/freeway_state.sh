@@ -83,7 +83,7 @@ freeway_mark_submitted() {
 
 freeway_stage_output_exists() {
   local stage="$1"
-  [[ -s "$(stage_output_root "$stage")" ]]
+  [[ -s "$(stage_output_path "$stage")" ]]
 }
 
 freeway_stage_missing_dependencies() {
@@ -167,5 +167,5 @@ freeway_submit_stage() {
   job_id="$("$sbatch_bin" "${sbatch_args[@]}" "$repo_root/src/slurm/freeway_stage_job.sh" "$item" "$pipeline_tag")"
 
   freeway_mark_submitted "$item" "$stage" "$job_id"
-  printf 'submitted %-2s %-14s job %s\n' "$item" "$stage" "$job_id"
+  printf 'submitted %-2s %-22s job %s\n' "$item" "$stage" "$job_id"
 }

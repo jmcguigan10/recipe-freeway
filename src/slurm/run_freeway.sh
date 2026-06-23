@@ -45,20 +45,20 @@ printf 'Data run dir:        %s\n\n' "$data_run_dir"
 for index in "${!FREEWAY_STAGE_ORDER[@]}"; do
   stage="${FREEWAY_STAGE_ORDER[$index]}"
   item="$(printf '%02d' "$index")"
-  output_root="$(stage_output_root "$stage")"
+  output_path="$(stage_output_path "$stage")"
 
   if freeway_stage_output_exists "$stage"; then
-    printf 'complete  %-2s %-14s %s\n' "$item" "$stage" "$output_root"
+    printf 'complete  %-2s %-22s %s\n' "$item" "$stage" "$output_path"
     complete_count=$((complete_count + 1))
   elif freeway_stage_is_submitted "$item" "$stage"; then
-    printf 'waiting   %-2s %-14s submitted, output missing\n' "$item" "$stage"
+    printf 'waiting   %-2s %-22s submitted, output missing\n' "$item" "$stage"
     waiting_count=$((waiting_count + 1))
   elif freeway_stage_dependencies_ready "$stage"; then
     freeway_submit_stage "$index" "$stage"
     submitted_count=$((submitted_count + 1))
   else
     missing_dependencies="$(freeway_stage_missing_dependencies "$stage")"
-    printf 'pending   %-2s %-14s waiting for %s\n' "$item" "$stage" "$missing_dependencies"
+    printf 'pending   %-2s %-22s waiting for %s\n' "$item" "$stage" "$missing_dependencies"
     pending_count=$((pending_count + 1))
   fi
 done

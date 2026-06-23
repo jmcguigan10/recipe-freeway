@@ -6,10 +6,11 @@ cd "$repo_root"
 
 status=0
 while IFS= read -r file; do
+  [[ -f "$file" ]] || continue
   if grep -nE '^(<<<<<<<|=======|>>>>>>>)($| .*)' "$file"; then
     status=1
   fi
-done < <(git ls-files)
+done < <(git ls-files --cached --others --exclude-standard)
 
 if ((status != 0)); then
   echo "Merge conflict markers found." >&2
