@@ -145,7 +145,62 @@ merge_root_files() {
   mkdir -p "$output_dir"
   tmp_root="$(mktemp "$output_dir/.${output_base}.merge.tmp.XXXXXX")"
 
-  if run_stack_command hadd -f "$tmp_root" "$@"; then
+  if run_stack_command bash "$project_helper_dir/run-with-g4-preload.sh" "$muse_src_dir" hadd -f "$tmp_root" "$@"; then
+    :
+  else
+    rc=$?
+    rm -f "$tmp_root"
+    return "$rc"
+  fi
+
+  if validate_root_file "$tmp_root" "$expected_tree"; then
+    :
+  else
+    rc=$?
+    rm -f "$tmp_root"
+    return "$rc"
+  fi
+
+  if mv -f "$tmp_root" "$output_root"; then
+    :
+  else
+    rc=$?
+    rm -f "$tmp_root"
+    return "$rc"
+  fi
+}
+
+
+merge_root_tree_files() {
+  local output_root="$1"
+  local expected_tree="$2"
+  local output_dir
+  local output_base
+  local tmp_root
+  local rc
+  local input_root
+  shift 2
+
+  if (($# == 0)); then
+    echo "No ROOT inputs provided for tree merge: $output_root" >&2
+    return 1
+  fi
+
+  for input_root in "$@"; do
+    if [[ ! -s "$input_root" ]]; then
+      echo "ROOT tree merge input is missing or empty: $input_root" >&2
+      return 1
+    fi
+  done
+
+  output_dir="$(dirname -- "$output_root")"
+  output_base="$(basename -- "$output_root")"
+
+  mkdir -p "$output_dir"
+  tmp_root="$(mktemp "$output_dir/.${output_base}.tree-merge.tmp.XXXXXX")"
+
+  if run_stack_command bash "$project_helper_dir/run-with-g4-preload.sh" "$muse_src_dir" \
+      python "$repo_root/src/python/merge_root_trees.py" "$tmp_root" "$expected_tree" "$@"; then
     :
   else
     rc=$?

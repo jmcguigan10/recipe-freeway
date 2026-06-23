@@ -157,6 +157,7 @@ declare -gA FREEWAY_STAGE_INIT=(
   [bm]="env:MUSE_INIT:muse:init/all.xml"
   [veto]="env:MUSE_INIT:muse:init/all.xml"
   [tcpv]="env:MUSE_INIT:muse:init/all.xml"
+  [stt]="env:MUSE_INIT:muse:init/all.xml"
   [gem_hits]="muse:init/all.xml"
 )
 
@@ -172,3 +173,18 @@ declare -gA FREEWAY_STAGE_REPORT_PAYLOAD=(
   [bm]="BM BM_Hits hits"
   [veto]="VETO VETO_Hits hits"
 )
+<<<<<<< Updated upstream
+=======
+
+# Optional per-stage cooker worker overrides. When unset, cooker stages use
+# SLURM_RECIPE_CONFIG[NTASKS] in Slurm jobs and one worker in direct runs.
+declare -gA FREEWAY_STAGE_PARALLEL_TASKS=(
+  # [stt]="1"
+)
+
+# Optional per-stage merge mode. The default is full hadd; tree mode keeps
+# the output TTree and RunInfo while skipping canvas-heavy monitor objects.
+declare -gA FREEWAY_STAGE_MERGE_MODE=(
+  [veto]="tree"
+)
+>>>>>>> Stashed changes
