@@ -54,6 +54,13 @@ check_g4psi_parallel_task_selection() {
   unset SLURM_JOB_ID
 }
 
+check_no_cooker_parallel_knob() {
+  local matches
+
+  matches="$(grep -R -n 'COOKER_PARALLEL' README.md test_run.sh src configs 2>/dev/null || true)"
+  [[ -z "$matches" ]] || fail "COOKER_PARALLEL references should not exist: $matches"
+}
+
 [[ ${#FREEWAY_STAGE_ORDER[@]} -gt 0 ]] || fail "FREEWAY_STAGE_ORDER is empty"
 
 declare -A stage_seen=()
@@ -117,6 +124,11 @@ for name in SLURM_SIM_CONFIG SLURM_RECIPE_CONFIG; do
   [[ "$cpus" =~ ^[1-9][0-9]*$ ]] || fail "${name}[CPUS_PER_TASK] must be a positive integer: $cpus"
 done
 
+recipe_ntasks="${SLURM_RECIPE_CONFIG[NTASKS]:-}"
+recipe_cpus="${SLURM_RECIPE_CONFIG[CPUS_PER_TASK]:-}"
+[[ "$recipe_ntasks" == "1" ]] || fail "SLURM_RECIPE_CONFIG[NTASKS] must stay 1 for serial cooker stages"
+[[ "$recipe_cpus" == "1" ]] || fail "SLURM_RECIPE_CONFIG[CPUS_PER_TASK] must stay 1 for serial cooker stages"
+
 store_t0="${PHYSICS_CONFIG[STORE_T0]:-}"
 case "$store_t0" in
   ""|0|1|true|TRUE|false|FALSE|yes|YES|no|NO|y|Y|n|N|on|ON|off|OFF)
@@ -128,5 +140,6 @@ esac
 
 grep -q 'source_project_lib parallel.sh' src/shell/lib/loader.sh || fail "loader.sh must load parallel.sh"
 check_g4psi_parallel_task_selection
+check_no_cooker_parallel_knob
 
 echo "Config graph OK: ${#FREEWAY_STAGE_ORDER[@]} stages"

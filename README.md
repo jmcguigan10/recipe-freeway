@@ -251,9 +251,9 @@ normal `*_g4psi.root`, then deletes successful chunk ROOT files. Chunk logs are
 kept. Direct non-Slurm runs default to one g4PSI worker unless
 `G4PSI_PARALLEL_TASKS` is set explicitly.
 
-Cooker stages use `SLURM_RECIPE_CONFIG` and currently run one output per stage.
-The shared parallel worker helper is in place for future cooker parallelization,
-but cooker stages are not parallelized by default.
+Cooker stages use `SLURM_RECIPE_CONFIG` and intentionally run serially inside
+each stage job, producing one ROOT output per stage. Independent stages still
+fan out as separate Slurm jobs when their dependencies are ready.
 
 Stage logs go to:
 
