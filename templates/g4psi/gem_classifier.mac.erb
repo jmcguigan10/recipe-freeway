@@ -1,0 +1,29 @@
+/g4PSI/det/component Beamline
+
+# === beam trajectory detectors through GEM0 ===
+/g4PSI/det/component BHC
+/g4PSI/det/component BHD threshold = 0.15 MeV
+/g4PSI/det/component GEM0
+
+/g4PSI/det/info info.txt
+/g4PSI/det/setup standard2015
+/process/msc/ThetaLimit 5 deg
+
+# Ethan's email 11/15/22 setup.mac
+/g4PSI/det/trans GEM0 -0.511 0.106 -0.008 mm
+/g4PSI/det/rot GEM0 0.036 0.018 -0.541 deg
+
+# No trigger gates: every generated beam particle is written to T for ML labels.
+# =======================================
+/run/initialize
+
+/gun/beam_momentum_spread 0.008
+/gun/set_pathlength 23.5 m
+/gun/set_vertexz -1.5 m
+/gun/mode beamline_profile
+/gun/seeds <%= seed_1 %> <%= seed_2 %>
+/gun/particle <%= particle %>
+/g4PSI/run/nr <%= run_nr %>
+/gun/beam_momentum <%= beam_momentum %> MeV
+/g4PSI/run/rootfile <%= rootfile %>
+/run/beamOn <%= n_events %>

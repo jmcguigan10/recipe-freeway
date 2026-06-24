@@ -1,6 +1,6 @@
 declare -gA PHYSICS_CONFIG=(
   [RUN_NR]="22308"
-  [RAD_MODE]="rad2"
+  [RAD_MODE]="none"
   [STORE_T0]="false"
   [PARTICLE]="e+"
   [PARTICLE_TAG]="e_pos"
