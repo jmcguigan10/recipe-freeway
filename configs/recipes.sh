@@ -119,7 +119,7 @@ declare -gA FREEWAY_STAGE_RECIPE=(
   [veto]="muse:recipes/VETO/VETO_monitor_with_tree.xml"
   #[tcpv]="muse:recipes/TCPV/TCPV_calib.xml"
   [tcpv]="muse:recipes/TCPV/TCPV_monitor_with_tree.xml"
-  [stt]="muse:recipes/STT/STT_calib.xml"
+  [stt]="muse:recipes/STT/STT.xml"
   [gem_hits]="muse:recipes/GEMini/gemini.xml"
   [gem_tracks]="muse:recipes/tracking/GEM_cmin.xml"
   [tracklets]="muse:recipes/tracking/Tracklet_Driver_cmin.xml"
@@ -147,7 +147,7 @@ declare -gA FREEWAY_STAGE_INPUTS=(
   [cross_section]="pathlength mc2root bh bm sps pbglass gem_tracks veto tcpv"
   [export_cs_events]="cross_section hazard_truth g4psi"
   [hazard_cutflow]="hazard_truth export_cs_events"
-  [export_training_table]="hazard_truth hazard_cutflow export_cs_events"
+  [export_training_table]="hazard_truth export_cs_events"
 )
 
 declare -gA FREEWAY_STAGE_INIT=(

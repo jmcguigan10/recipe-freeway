@@ -72,6 +72,27 @@ def tree_branch(tree, name):
     except Exception:
         return None
 
+def tree_formula_value(tree, expression, cache):
+    if expression not in cache:
+        try:
+            cache[expression] = ROOT.TTreeFormula(expression, expression, tree)
+        except Exception:
+            cache[expression] = None
+    formula = cache[expression]
+    if formula is None:
+        return None
+    try:
+        value = formula.EvalInstance()
+    except Exception:
+        return None
+    try:
+        value_float = float(value)
+    except Exception:
+        return None
+    if not math.isfinite(value_float):
+        return None
+    return value_float
+
 
 def sized_container_length(value):
     if value is None:
@@ -140,13 +161,19 @@ def event_number(tree, event_index: int) -> int:
     return event_index
 
 
-def event_weight(tree) -> float:
+def event_weight(tree, formula_cache=None) -> float:
     event_info = tree_branch(tree, "EventInfo")
     if event_info is not None:
         try:
             return float(event_info.weight)
         except Exception:
             pass
+    if formula_cache is None:
+        formula_cache = {}
+    for expression in ("EventInfo.weight", "EventInfo.event_weight", "event_weight", "EventInfo.wgt", "wgt", "weight"):
+        value = tree_formula_value(tree, expression, formula_cache)
+        if value is not None:
+            return value
     return 1.0
 
 
@@ -202,6 +229,7 @@ def fill_output(output_tree, string_buffers, int_buffers, double_buffers, row) -
 
 def candidate_rows(tree, args):
     n_entries = int(tree.GetEntries())
+    formula_cache = {}
     for event_index in range(n_entries):
         tree.GetEntry(event_index)
 
@@ -214,7 +242,7 @@ def candidate_rows(tree, args):
 
         n_candidates = vector_size(pids)
         evt_number = event_number(tree, event_index)
-        evt_weight = event_weight(tree)
+        evt_weight = event_weight(tree, formula_cache)
         side = sps_side_hint(tree)
         pass_side_hint = int(side != "unknown")
 

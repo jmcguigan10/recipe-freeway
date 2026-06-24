@@ -46,7 +46,11 @@ config_file_for() {
   local name="$1"
   local snapshot="${data_run_dir:-}/configs/$name.sh"
 
-  if [[ -n "${data_run_dir:-}" && -f "$snapshot" ]]; then
+  # Slurm queues and accounts are execution-environment config, not run provenance.
+  # Use the current repo config so old run snapshots do not break resubmission.
+  if [[ "$name" == "slurm" ]]; then
+    printf '%s/configs/%s.sh\n' "$repo_root" "$name"
+  elif [[ -n "${data_run_dir:-}" && -f "$snapshot" ]]; then
     printf '%s\n' "$snapshot"
   else
     printf '%s/configs/%s.sh\n' "$repo_root" "$name"

@@ -117,13 +117,16 @@ def scalar(row, name):
     except Exception:
         pass
     try:
-        return int(value)
-    except Exception:
-        pass
-    try:
-        return float(value)
+        numeric = float(value)
     except Exception:
         return str(value)
+    try:
+        integer = int(value)
+        if numeric == integer:
+            return integer
+    except Exception:
+        pass
+    return numeric
 
 
 def read_hazard_truth(path):
@@ -213,10 +216,10 @@ def accepted_candidate_ids(truth_rows, events_csv, summary):
     if ambiguous or missing:
         details = []
         if ambiguous:
-            details.append(f"ambiguous accepted-event keys: {', '.join(ambiguous[:5])}")
+            details.append(f"ambiguous:{len(ambiguous)}")
         if missing:
-            details.append(f"unmatched accepted-event keys: {', '.join(missing[:5])}")
-        raise RuntimeError("; ".join(details))
+            details.append(f"missing:{len(missing)}")
+        return set(), f"candidate_join_not_exact_{'_'.join(details)}"
 
     return accepted, "cs_events_exact_candidate_join"
 

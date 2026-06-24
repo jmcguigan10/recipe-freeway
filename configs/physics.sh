@@ -1,12 +1,12 @@
 declare -gA PHYSICS_CONFIG=(
   [RUN_NR]="22308"
   [RAD_MODE]="rad2"
-  [STORE_T0]="true"
+  [STORE_T0]="false"
   [PARTICLE]="e+"
   [PARTICLE_TAG]="e_pos"
   [PART]="0"
   [BEAM_MOMENTUM]="159.279"
-  [N_EVENTS]="100000"
-  [SEED_1]="1778753222"
-  [SEED_2]="1778753290"
+  [N_EVENTS]="9600000"
+  [SEED_1]="1778753221"
+  [SEED_2]="1778753289"
 )

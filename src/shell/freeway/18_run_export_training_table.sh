@@ -10,7 +10,6 @@ select_pipeline "${1:-}"
 resolve_data_run_dir
 
 hazard_truth_root="$(stage_output_root hazard_truth)"
-hazard_cutflow_root="$(stage_output_root hazard_cutflow)"
 events_csv="$(stage_output_path export_cs_events)"
 summary_json="$data_run_dir/${run_tag}_cross_section_summary.json"
 output_parquet="$(stage_output_path export_training_table)"
@@ -20,7 +19,7 @@ tmp_parquet="$data_run_dir/.${run_tag}_training_candidates.$$.$RANDOM.tmp.parque
 tmp_csv="$data_run_dir/.${run_tag}_training_candidates.$$.$RANDOM.tmp.csv"
 tmp_summary_json="$data_run_dir/.${run_tag}_training_summary.$$.$RANDOM.tmp.json"
 
-for input in "$hazard_truth_root" "$hazard_cutflow_root" "$events_csv" "$summary_json"; do
+for input in "$hazard_truth_root" "$events_csv" "$summary_json"; do
   require_file "$input"
 done
 
@@ -32,7 +31,6 @@ trap cleanup EXIT
 STACK_PYTHON_TIMEOUT="${EXPORT_TRAINING_TABLE_TIMEOUT:-0}" \
   run_stack_python "$repo_root/src/python/export_training_table.py" \
     --hazard-truth-root "$hazard_truth_root" \
-    --hazard-cutflow-root "$hazard_cutflow_root" \
     --events-csv "$events_csv" \
     --summary-json "$summary_json" \
     --output-csv "$tmp_csv" \
@@ -41,8 +39,7 @@ STACK_PYTHON_TIMEOUT="${EXPORT_TRAINING_TABLE_TIMEOUT:-0}" \
     --reported-output-csv "$output_csv" \
     --reported-output-parquet "$output_parquet" \
     --reported-output-summary-json "$output_summary_json" \
-    --hazard-truth-parquet "$data_run_dir/${run_tag}_hazard_truth.parquet" \
-    --hazard-cutflow-parquet "$data_run_dir/${run_tag}_hazard_cutflow.parquet"
+    --hazard-truth-parquet "$data_run_dir/${run_tag}_hazard_truth.parquet"
 
 [[ -s "$tmp_csv" ]] || die "missing training CSV output: $tmp_csv"
 [[ -s "$tmp_parquet" ]] || die "missing training Parquet output: $tmp_parquet"
