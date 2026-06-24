@@ -104,7 +104,18 @@ apply_physics_config() {
   rad_mode="${PHYSICS_CONFIG[RAD_MODE]:-rad2}"
   store_t0="${PHYSICS_CONFIG[STORE_T0]:-false}"
   rad_mode="${rad_mode#--}"
-  rad_flag="--$rad_mode"
+  case "$rad_mode" in
+    ""|none|off|false|0)
+      rad_mode="none"
+      rad_flag=""
+      ;;
+    rad|rad1|rad2|rad3)
+      rad_flag="--$rad_mode"
+      ;;
+    *)
+      die "PHYSICS_CONFIG[RAD_MODE] must be one of none, rad, rad1, rad2, or rad3: $rad_mode"
+      ;;
+  esac
 
   RUN_NR="$run_nr"
   PARTICLE="$particle"

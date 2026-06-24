@@ -3,11 +3,13 @@ MUSE_PIPELINE_G4PSI_FUNC_SH_LOADED=1
 
 prepare_g4psi_config() {
   template="$(resolve_path_spec "${G4PSI_CONFIG[template]:-repo:templates/g4psi/muse.mac.erb}")"
+  renderer="$(resolve_path_spec "${G4PSI_CONFIG[renderer]:-repo:src/ruby/render_macro.rb}")"
   generated_dir="$(resolve_path_spec "${G4PSI_CONFIG[generated_dir]:-repo:macros/generated}")"
   generated_macro="$generated_dir/$run_tag.mac"
   rootfile="$(stage_output_root g4psi)"
 
   require_file "$template"
+  require_file "$renderer"
 }
 
 g4psi_positive_int_value() {
@@ -69,7 +71,7 @@ render_g4psi_macro() {
 
   with_dir "$stack_dir" \
     "$stack_dir/scripts/pixi-local" run -e batch \
-      ruby "$repo_root/src/ruby/render_macro.rb" \
+      ruby "$renderer" \
         --template "$template" \
         --output "$macro_path" \
         --output-dir "$data_run_dir" \
@@ -89,7 +91,7 @@ run_g4psi_macro() {
   local macro_path="${1:-$generated_macro}"
   local launcher=()
   local launcher_mode="direct"
-  local g4psi_args=("$rad_flag")
+  local g4psi_args=()
 
   if [[ -n "${SLURM_JOB_ID:-}" ]] && is_truthy "${G4PSI_ENABLE_SRUN:-0}" && command -v srun >/dev/null 2>&1; then
     case "${SLURM_STEP_ID:-}" in
@@ -105,6 +107,9 @@ run_g4psi_macro() {
 
   echo "g4PSI launcher: $launcher_mode"
 
+  if [[ -n "${rad_flag:-}" ]]; then
+    g4psi_args+=("$rad_flag")
+  fi
   if is_truthy "${STORE_T0:-}"; then
     g4psi_args+=("--T0")
   fi
