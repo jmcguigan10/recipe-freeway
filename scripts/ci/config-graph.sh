@@ -18,8 +18,8 @@ source configs/physics.sh
 source configs/slurm.sh
 source configs/g4psi.sh
 source configs/recipes.sh
-source src/shell/lib/errors.sh
-source src/shell/lib/orchs/g4psi.func.sh
+source src/freeway/shell/lib/errors.sh
+source src/freeway/shell/lib/orchs/g4psi.func.sh
 
 check_g4psi_parallel_task_selection() {
   local actual
@@ -85,11 +85,11 @@ check_slurm_cluster_config() {
   local invalid_output
 
   actual="$(slurm_cluster_values isaac)" || fail "SLURM_CLUSTER=isaac should load"
-  [[ "$actual" == "isaac-utk0307|condo-slagergr|condo|4|isaac-utk0307|condo-slagergr|condo|1" ]] || \
+  [[ "$actual" == "isaac-utk0307|condo-slagergr|condo|48|isaac-utk0307|condo-slagergr|condo|1" ]] || \
     fail "unexpected ISAAC Slurm config: $actual"
 
   actual="$(slurm_cluster_values theia)" || fail "SLURM_CLUSTER=theia should load"
-  [[ "$actual" == "|defq||4||defq||1" ]] || \
+  [[ "$actual" == "|defq||48||defq||1" ]] || \
     fail "unexpected Theia Slurm config: $actual"
 
   if invalid_output="$(slurm_cluster_values invalid 2>&1)"; then
@@ -155,7 +155,7 @@ for index in "${!FREEWAY_STAGE_ORDER[@]}"; do
 
   [[ -n "${FREEWAY_STAGE_KIND[$stage]:-}" ]] || fail "$stage missing FREEWAY_STAGE_KIND"
   [[ -n "${FREEWAY_STAGE_SCRIPT[$stage]:-}" ]] || fail "$stage missing FREEWAY_STAGE_SCRIPT"
-  [[ -f "src/shell/freeway/${FREEWAY_STAGE_SCRIPT[$stage]}" ]] || fail "$stage script not found: ${FREEWAY_STAGE_SCRIPT[$stage]}"
+  [[ -f "src/freeway/shell/freeway/${FREEWAY_STAGE_SCRIPT[$stage]}" ]] || fail "$stage script not found: ${FREEWAY_STAGE_SCRIPT[$stage]}"
   [[ "${FREEWAY_STAGE_SCRIPT[$stage]}" == "${item}_"* ]] || fail "$stage script must start with $item: ${FREEWAY_STAGE_SCRIPT[$stage]}"
   [[ -n "${FREEWAY_STAGE_OUTPUT[$stage]:-}" ]] || fail "$stage missing FREEWAY_STAGE_OUTPUT"
 
@@ -232,7 +232,7 @@ case "$store_t0" in
     ;;
 esac
 
-grep -q 'source_project_lib parallel.sh' src/shell/lib/loader.sh || fail "loader.sh must load parallel.sh"
+grep -q 'source_project_lib parallel.sh' src/freeway/shell/lib/loader.sh || fail "loader.sh must load parallel.sh"
 check_g4psi_parallel_task_selection
 check_no_cooker_parallel_knob
 check_slurm_cluster_config

@@ -4,8 +4,8 @@ set -Eeuo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/../.." && pwd)"
 
-# shellcheck source=../shell/lib/loader.sh
-source "$repo_root/src/shell/lib/loader.sh"
+# shellcheck source=../freeway/shell/lib/loader.sh
+source "$repo_root/src/freeway/shell/lib/loader.sh"
 # shellcheck source=lib/freeway_state.sh
 source "$repo_root/src/slurm/lib/freeway_state.sh"
 

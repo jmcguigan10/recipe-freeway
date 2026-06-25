@@ -5,9 +5,9 @@ repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 cd "$repo_root"
 
 files="$(
-  git ls-files --cached --others --exclude-standard 'src/python/*.py' |
+  git ls-files --cached --others --exclude-standard src/freeway/python src/ml/python |
     while IFS= read -r file; do
-      [[ -f "$file" ]] && printf '%s\n' "$file"
+      [[ -f "$file" && "$file" == *.py ]] && printf '%s\n' "$file"
     done |
     sort
 )"
@@ -27,4 +27,18 @@ else
   exit 1
 fi
 
-"$python_bin" -m py_compile $files
+"$python_bin" - $files <<'PY'
+import pathlib
+import sys
+
+failed = False
+for path in sys.argv[1:]:
+    try:
+        source = pathlib.Path(path).read_text()
+        compile(source, path, "exec")
+    except SyntaxError as exc:
+        failed = True
+        print(f"{path}:{exc.lineno}:{exc.offset}: {exc.msg}", file=sys.stderr)
+
+sys.exit(1 if failed else 0)
+PY

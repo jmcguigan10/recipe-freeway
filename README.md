@@ -18,9 +18,10 @@ recipe-freeway/
   data_process/            per-run outputs and copied config snapshots
   macros/generated/        generated g4PSI macros
   packman-muse/            default local stack checkout
-  src/python/              ROOT validation and payload-count helpers
-  src/ruby/                g4PSI macro renderer
-  src/shell/               stage runners and shared shell library
+  src/freeway/python/              ROOT validation and payload-count helpers
+  src/freeway/ruby/                g4PSI macro renderer
+  src/freeway/shell/               stage runners and shared shell library
+  src/ml/python/                   PyTorch ML models and datasets
   src/slurm/               Slurm freeway orchestrator
   templates/g4psi/         g4PSI macro template
   test_run.sh              manual sequential smoke runner
@@ -68,7 +69,7 @@ Quick sanity checks after install:
 ```bash
 cd packman-muse
 ./scripts/pixi-local run -e batch bash -lc 'command -v g4PSI && command -v cooker && command -v hadd'
-./scripts/pixi-local run -e batch ruby ../src/ruby/render_macro.rb --help
+./scripts/pixi-local run -e batch ruby ../src/freeway/ruby/render_macro.rb --help
 ```
 
 ## Moving to Another Cluster
@@ -348,18 +349,18 @@ for an already submitted job instead of resubmitting it.
 
 ## Manual and Local Runs
 
-Individual stage scripts live in `src/shell/freeway/`. They can be run directly
+Individual stage scripts live in `src/freeway/shell/freeway/`. They can be run directly
 when required inputs already exist:
 
 ```bash
-bash src/shell/freeway/12_run_vertex.sh <pipeline-tag>
+bash src/freeway/shell/freeway/12_run_vertex.sh <pipeline-tag>
 ```
 
 When running on a system with the `packman-muse` Pixi stack, prefer:
 
 ```bash
 cd packman-muse
-./scripts/pixi-local run -e batch bash ../src/shell/freeway/12_run_vertex.sh <pipeline-tag>
+./scripts/pixi-local run -e batch bash ../src/freeway/shell/freeway/12_run_vertex.sh <pipeline-tag>
 ```
 
 `test_run.sh` is a manual serial smoke runner for small sanity-check runs after
@@ -392,7 +393,7 @@ Validate a ROOT file has an expected tree:
 ```bash
 cd packman-muse
 ./scripts/pixi-local run -e batch python \
-  ../src/python/validate_root_file.py \
+  ../src/freeway/python/validate_root_file.py \
   ../data_process/<tag>/<tag>_g4psi.root T
 ```
 
@@ -401,7 +402,7 @@ Count payloads:
 ```bash
 cd packman-muse
 ./scripts/pixi-local run -e batch python \
-  ../src/python/count_root_payload.py \
+  ../src/freeway/python/count_root_payload.py \
   ../data_process/<tag>/<tag>_cross_section.root \
   cs CSAcceptedEvents events
 ```
