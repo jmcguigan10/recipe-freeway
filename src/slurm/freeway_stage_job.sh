@@ -8,8 +8,8 @@ else
   repo_root="$(cd -- "$script_dir/../.." && pwd -P)"
 fi
 
-# shellcheck source=../shell/lib/loader.sh
-source "$repo_root/src/shell/lib/loader.sh"
+# shellcheck source=../freeway/shell/lib/loader.sh
+source "$repo_root/src/freeway/shell/lib/loader.sh"
 # shellcheck source=lib/freeway_state.sh
 source "$repo_root/src/slurm/lib/freeway_state.sh"
 
@@ -42,7 +42,7 @@ stage="$(freeway_stage_by_index "$((10#$item))")" || die "unknown freeway stage 
 freeway_script="${FREEWAY_STAGE_SCRIPT[$stage]:-}"
 [[ -n "$freeway_script" ]] || die "no script configured for freeway stage: $stage"
 
-stage_script="$repo_root/src/shell/freeway/$freeway_script"
+stage_script="$repo_root/src/freeway/shell/freeway/$freeway_script"
 [[ -f "$stage_script" ]] || die "required freeway script not found: $stage_script"
 
 printf 'Freeway job: %s %s\n' "$item" "$stage"

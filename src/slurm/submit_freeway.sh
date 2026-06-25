@@ -35,12 +35,12 @@ else
   repo_root="$(cd -- "$script_dir/../.." && pwd -P)"
 fi
 
-source "$repo_root/src/shell/lib/loader.sh"
+source "$repo_root/src/freeway/shell/lib/loader.sh"
 select_pipeline "$pipeline_arg"
 
 stage="$(freeway_stage_by_index "$idx")" || usage
 item="$(printf '%02d' "$idx")"
-freeway_script="$repo_root/src/shell/freeway/${FREEWAY_STAGE_SCRIPT[$stage]}"
+freeway_script="$repo_root/src/freeway/shell/freeway/${FREEWAY_STAGE_SCRIPT[$stage]}"
 
 [[ -f "$freeway_script" ]] || die "missing freeway script: $freeway_script"
 
