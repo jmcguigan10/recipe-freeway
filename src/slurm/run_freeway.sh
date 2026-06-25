@@ -51,7 +51,8 @@ for index in "${!FREEWAY_STAGE_ORDER[@]}"; do
     printf 'complete  %-2s %-22s %s\n' "$item" "$stage" "$output_path"
     complete_count=$((complete_count + 1))
   elif freeway_stage_is_submitted "$item" "$stage"; then
-    printf 'waiting   %-2s %-22s submitted, output missing\n' "$item" "$stage"
+    missing_outputs="$(freeway_stage_missing_outputs "$stage")"
+    printf 'waiting   %-2s %-22s submitted, missing %s\n' "$item" "$stage" "$missing_outputs"
     waiting_count=$((waiting_count + 1))
   elif freeway_stage_dependencies_ready "$stage"; then
     freeway_submit_stage "$index" "$stage"

@@ -81,9 +81,35 @@ freeway_mark_submitted() {
     "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "$file"
 }
 
-freeway_stage_output_exists() {
+freeway_stage_output_paths() {
   local stage="$1"
-  [[ -s "$(stage_output_path "$stage")" ]]
+  local output_path
+
+  output_path="$(stage_output_path "$stage")"
+  printf '%s\n' "$output_path"
+
+  if [[ "$stage" == "g4psi" ]] && is_truthy "${G4PSI_CONFIG[gem_classifier_export]:-0}"; then
+    output_path="$(stage_path "${G4PSI_CONFIG[gem_classifier_output]:-gem_classifier}" csv)"
+    printf '%s\n' "$output_path"
+  fi
+}
+
+freeway_stage_missing_outputs() {
+  local stage="$1"
+  local output_path
+  local missing=()
+
+  while IFS= read -r output_path; do
+    [[ -s "$output_path" ]] || missing+=("$output_path")
+  done < <(freeway_stage_output_paths "$stage")
+
+  if ((${#missing[@]})); then
+    join_by ', ' "${missing[@]}"
+  fi
+}
+
+freeway_stage_output_exists() {
+  [[ -z "$(freeway_stage_missing_outputs "$1")" ]]
 }
 
 freeway_stage_missing_dependencies() {

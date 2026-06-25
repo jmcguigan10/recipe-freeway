@@ -24,7 +24,7 @@ Simulation examples
   START_STAGE=0 END_STAGE=0 bash test_run.sh mc22308_gem_classifier_e_pos_part0
 
 Freeway stage numbers
-  00  g4psi                  -> *_g4psi.root
+  00  g4psi                  -> *_g4psi.root, *_gem_classifier.csv
   01  hazard_truth           -> *_hazard_truth.root
   02  mc2root                -> *_mmt.root
   03  bh                     -> *_bh.root
@@ -80,7 +80,16 @@ Local smoke run environment knobs
       Last zero-based stage for test_run.sh. Default: 18
 
 GEM classifier table export
-  Export classifier rows from a g4PSI ROOT file:
+  The g4PSI simulation stage writes this CSV automatically when enabled:
+    data_process/<tag>/<tag>_gem_classifier.csv
+
+  Export controls live in configs/g4psi.sh:
+    G4PSI_CONFIG[gem_classifier_export]=1
+    G4PSI_CONFIG[gem_classifier_exporter]=repo:src/freeway/python/gem_classifier/export_gem_classifier_table.py
+    G4PSI_CONFIG[gem_classifier_output]=gem_classifier
+    G4PSI_CONFIG[gem_classifier_tree]=T
+
+  Re-export classifier rows manually from an existing g4PSI ROOT file:
     python3 src/freeway/python/gem_classifier/export_gem_classifier_table.py \
       --input-root <g4psi.root> \
       --output-csv <table.csv> \
@@ -167,7 +176,8 @@ Related config files
       Run number, particle, beam momentum, event count, seeds, and RAD_MODE.
 
   configs/g4psi.sh
-      g4PSI macro template, renderer, and generated macro directory.
+      g4PSI macro template, renderer, generated macro directory, and GEM
+      classifier CSV export controls.
 
   configs/slurm.sh
       Slurm account/partition/qos/resources for simulation and recipe stages.
