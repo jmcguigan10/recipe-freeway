@@ -85,6 +85,17 @@ def parse_args():
         "--run-tag",
         help="Run tag to write into the CSV. Defaults to the input ROOT basename.",
     )
+    parser.add_argument(
+        "--start-event",
+        type=int,
+        default=0,
+        help="First global event index to export. Defaults to 0.",
+    )
+    parser.add_argument(
+        "--max-events",
+        type=int,
+        help="Maximum number of events to export from --start-event.",
+    )
     return parser.parse_args()
 
 
@@ -248,12 +259,37 @@ def event_row(tree, event_index, run_tag):
     }
 
 
+def event_bounds(tree, start_event, max_events):
+    total_entries = int(tree.GetEntries())
+    if start_event < 0:
+        raise RuntimeError(f"--start-event must be non-negative: {start_event}")
+    if max_events is not None and max_events < 0:
+        raise RuntimeError(f"--max-events must be non-negative: {max_events}")
+
+    stop_event = total_entries
+    if max_events is not None:
+        stop_event = min(total_entries, start_event + max_events)
+    start_event = min(start_event, total_entries)
+    return start_event, stop_event, total_entries
+
+
+def iter_event_rows(tree, run_tag, start_event, stop_event):
+    for event_index in range(start_event, stop_event):
+        if tree.GetEntry(event_index) <= 0:
+            raise RuntimeError(f"Could not read event index {event_index}")
+        yield event_row(tree, event_index, run_tag)
+
+
 def write_csv(path, rows):
+    row_count = 0
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     with open(path, "w", newline="") as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=OUTPUT_COLUMNS)
         writer.writeheader()
-        writer.writerows(rows)
+        for row in rows:
+            writer.writerow(row)
+            row_count += 1
+    return row_count
 
 
 def main():
@@ -276,15 +312,19 @@ def main():
     try:
         require_branches(tree)
         run_tag = args.run_tag or default_run_tag(args.input_root)
-        rows = []
-        for event_index, entry in enumerate(tree):
-            rows.append(event_row(entry, event_index, run_tag))
+        start_event, stop_event, total_entries = event_bounds(
+            tree, args.start_event, args.max_events
+        )
+        row_count = write_csv(
+            args.output_csv,
+            iter_event_rows(tree, run_tag, start_event, stop_event),
+        )
     except RuntimeError as exc:
         print(str(exc), file=sys.stderr)
         return 1
 
-    write_csv(args.output_csv, rows)
-    print(f"Rows written: {len(rows)}")
+    print(f"Rows written: {row_count}")
+    print(f"Event range:  {start_event}:{stop_event} of {total_entries}")
     print(f"CSV output:   {args.output_csv}")
     return 0
 

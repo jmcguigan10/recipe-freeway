@@ -20,12 +20,24 @@ except ModuleNotFoundError:
 
 
 def make_dataloaders(config: TrainingConfig) -> tuple[DataLoader, DataLoader, GemClassifierDataset, Dataset]:
-    train_dataset = GemClassifierDataset(config.train_csv)
+    train_dataset = GemClassifierDataset(
+        config.train_csv,
+        feature_columns=config.feature_columns,
+        target_columns=config.target_columns,
+        normalize_features=config.normalize_inputs,
+    )
     generator = torch.Generator().manual_seed(config.seed)
 
     if config.val_csv:
         training_subset: Dataset = train_dataset
-        validation_subset: Dataset = GemClassifierDataset(config.val_csv)
+        validation_subset: Dataset = GemClassifierDataset(
+            config.val_csv,
+            feature_columns=config.feature_columns,
+            target_columns=config.target_columns,
+            normalize_features=config.normalize_inputs,
+            feature_mean=train_dataset.feature_mean.tolist(),
+            feature_std=train_dataset.feature_std.tolist(),
+        )
     else:
         if not 0.0 < config.val_fraction < 1.0:
             raise ValueError(f"val_fraction must be in (0, 1): {config.val_fraction}")
