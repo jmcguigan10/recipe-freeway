@@ -12,31 +12,35 @@ ensure_project_paths()
 from src.ml.python.io.args import TrainingConfig
 
 try:
-    from data.gem_data import GemClassifierDataset
-    from training.seed import seed_worker_factory
-except ModuleNotFoundError:
-    from ..data.gem_data import GemClassifierDataset
-    from .seed import seed_worker_factory
+    from ..data import GemClassifierDataset, build_gem_data_config
+except ImportError:
+    from data import GemClassifierDataset, build_gem_data_config
+
+from .seed import seed_worker_factory
 
 
 def make_dataloaders(config: TrainingConfig) -> tuple[DataLoader, DataLoader, GemClassifierDataset, Dataset]:
     train_dataset = GemClassifierDataset(
-        config.train_csv,
-        feature_columns=config.feature_columns,
-        target_columns=config.target_columns,
-        normalize_features=config.normalize_inputs,
+        build_gem_data_config(
+            config.train_csv,
+            feature_columns=config.feature_columns,
+            target_columns=config.target_columns,
+            normalize_features=config.normalize_inputs,
+        )
     )
     generator = torch.Generator().manual_seed(config.seed)
 
     if config.val_csv:
         training_subset: Dataset = train_dataset
         validation_subset: Dataset = GemClassifierDataset(
-            config.val_csv,
-            feature_columns=config.feature_columns,
-            target_columns=config.target_columns,
-            normalize_features=config.normalize_inputs,
-            feature_mean=train_dataset.feature_mean.tolist(),
-            feature_std=train_dataset.feature_std.tolist(),
+            build_gem_data_config(
+                config.val_csv,
+                feature_columns=config.feature_columns,
+                target_columns=config.target_columns,
+                normalize_features=config.normalize_inputs,
+                feature_mean=train_dataset.feature_mean.tolist(),
+                feature_std=train_dataset.feature_std.tolist(),
+            )
         )
     else:
         if not 0.0 < config.val_fraction < 1.0:

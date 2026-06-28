@@ -1,0 +1,7 @@
+loss:
+  loss: grouped-bce
+  focal_gamma: 2.0
+  pos_weight: auto
+  primary_loss_weight: 0.1
+  secondary_loss_weight: 1.0
+  other_loss_weight: 1.0

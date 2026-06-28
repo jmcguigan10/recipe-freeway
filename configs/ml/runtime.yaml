@@ -1,0 +1,6 @@
+runtime:
+  output_dir: artifacts/gem_classifier
+  seed: 1337
+  num_workers: 0
+  device: null
+  threshold: 0.5

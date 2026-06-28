@@ -83,7 +83,7 @@ GEM classifier table export
   The g4PSI simulation stage writes this CSV automatically when enabled:
     data_process/<tag>/<tag>_gem_classifier.csv
 
-  Export controls live in configs/g4psi.sh:
+  Export controls live in configs/freeway/g4psi.sh:
     G4PSI_CONFIG[gem_classifier_export]=1
     G4PSI_CONFIG[gem_classifier_exporter]=repo:src/freeway/python/gem_classifier/export_gem_classifier_table.py
     G4PSI_CONFIG[gem_classifier_output]=gem_classifier
@@ -103,11 +103,18 @@ ML training
   Module form:
     python3 -m src.ml.python.training.training_loop --train-csv <table.csv> [options]
 
+  Default ML config:
+    configs/ml/default.yaml
+
 ML training required option
   --train-csv PATH
       Training CSV from the GEM classifier table exporter.
 
 ML training options
+  --config PATH
+      YAML config file. Default: configs/ml/default.yaml. CLI values override
+      values loaded from YAML.
+
   --output-dir PATH
       Artifact directory. Default: artifacts/gem_classifier
 
@@ -172,16 +179,19 @@ ML training examples
     --device cpu
 
 Related config files
-  configs/physics.sh
+  configs/freeway/physics.sh
       Run number, particle, beam momentum, event count, seeds, and RAD_MODE.
 
-  configs/g4psi.sh
+  configs/freeway/g4psi.sh
       g4PSI macro template, renderer, generated macro directory, and GEM
       classifier CSV export controls.
 
-  configs/slurm.sh
+  configs/slurm/slurm.sh
       Slurm account/partition/qos/resources for simulation and recipe stages.
 
-  configs/recipes.sh
+  configs/freeway/recipes.sh
       Freeway stage order, output names, tree names, recipes, and dependencies.
+
+  configs/ml/*.yaml
+      Modular ML defaults loaded by --config.
 HELP

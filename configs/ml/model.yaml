@@ -1,0 +1,8 @@
+model:
+  hidden_dims:
+    - 64
+    - 64
+  dropout: 0.1
+  batch_norm: false
+  grouped_heads: false
+  head_hidden_dim: 128

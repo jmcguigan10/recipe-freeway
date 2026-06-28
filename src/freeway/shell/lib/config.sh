@@ -2,6 +2,7 @@
 MUSE_PIPELINE_CONFIG_SH_LOADED=1
 
 pipeline_config_names=(physics slurm g4psi recipes)
+freeway_snapshot_config_names=(physics g4psi recipes)
 
 reset_config_hashes() {
   unset PHYSICS_CONFIG
@@ -42,19 +43,58 @@ require_config_file() {
   [[ -f "$config_file" ]] || die "required config file not found: $config_file"
 }
 
+repo_config_file_for() {
+  local name="$1"
+
+  case "$name" in
+    physics|g4psi|recipes)
+      printf '%s/configs/freeway/%s.sh\n' "$repo_root" "$name"
+      ;;
+    slurm)
+      printf '%s/configs/slurm/slurm.sh\n' "$repo_root"
+      ;;
+    *)
+      die "unknown config name: $name"
+      ;;
+  esac
+}
+
+snapshot_config_file_for() {
+  local name="$1"
+  printf '%s/configs/freeway/%s.sh\n' "$data_run_dir" "$name"
+}
+
+legacy_snapshot_config_file_for() {
+  local name="$1"
+  printf '%s/configs/%s.sh\n' "$data_run_dir" "$name"
+}
+
 config_file_for() {
   local name="$1"
-  local snapshot="${data_run_dir:-}/configs/$name.sh"
+  local snapshot
+  local legacy_snapshot
 
   # Slurm queues and accounts are execution-environment config, not run provenance.
   # Use the current repo config so old run snapshots do not break resubmission.
   if [[ "$name" == "slurm" ]]; then
-    printf '%s/configs/%s.sh\n' "$repo_root" "$name"
-  elif [[ -n "${data_run_dir:-}" && -f "$snapshot" ]]; then
-    printf '%s\n' "$snapshot"
-  else
-    printf '%s/configs/%s.sh\n' "$repo_root" "$name"
+    repo_config_file_for "$name"
+    return
   fi
+
+  if [[ -n "${data_run_dir:-}" ]]; then
+    snapshot="$(snapshot_config_file_for "$name")"
+    legacy_snapshot="$(legacy_snapshot_config_file_for "$name")"
+    if [[ -f "$snapshot" ]]; then
+      printf '%s\n' "$snapshot"
+      return
+    fi
+    if [[ -f "$legacy_snapshot" ]]; then
+      printf '%s\n' "$legacy_snapshot"
+      return
+    fi
+  fi
+
+  repo_config_file_for "$name"
 }
 
 source_config_file() {
@@ -78,16 +118,25 @@ load_pipeline_configs() {
 }
 
 snapshot_configs() {
-  local snapshot_config_dir="$data_run_dir/configs"
+  local snapshot_config_dir="$data_run_dir/configs/freeway"
   local name
   local source_file
   local target_file
+  local legacy_target_file
 
   mkdir -p "$snapshot_config_dir"
-  for name in "${pipeline_config_names[@]}"; do
-    source_file="$repo_root/configs/$name.sh"
-    target_file="$snapshot_config_dir/$name.sh"
+  for name in "${freeway_snapshot_config_names[@]}"; do
+    source_file="$(repo_config_file_for "$name")"
+    target_file="$(snapshot_config_file_for "$name")"
+    legacy_target_file="$(legacy_snapshot_config_file_for "$name")"
     require_config_file "$source_file"
+
+    # Existing flat snapshots are old run provenance. Keep using them instead of
+    # creating a new-format snapshot from current repo defaults.
+    if [[ -f "$legacy_target_file" && ! -f "$target_file" ]]; then
+      continue
+    fi
+
     [[ -f "$target_file" ]] || cp "$source_file" "$target_file"
   done
 }

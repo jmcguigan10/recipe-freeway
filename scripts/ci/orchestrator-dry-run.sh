@@ -52,7 +52,7 @@ grep -q '/src/slurm/freeway_stage_job.sh$' "$fake_log"
 grep -q '^00$' "$fake_log"
 grep -q '^ci_pr_dry_run$' "$fake_log"
 
-[[ -f "$data_root/$tag/configs/physics.sh" ]]
+[[ -f "$data_root/$tag/configs/freeway/physics.sh" ]]
 [[ -f "$data_root/$tag/is_submitted.txt" ]]
 grep -q '^00 g4psi 12345 ' "$data_root/$tag/is_submitted.txt"
 
