@@ -1,4 +1,4 @@
-from .loss import build_bce_with_logits_loss, estimate_pos_weight
+from .loss import MultiTaskBCEWithLogitsLoss, build_bce_with_logits_loss, estimate_pos_weight
 from ._compat import ensure_project_paths
 from .dataloaders import make_dataloaders
 from .engine import fit, train_one_epoch
@@ -12,6 +12,7 @@ from src.ml.python.io.saving import save_checkpoint
 
 __all__ = [
     "TrainingConfig",
+    "MultiTaskBCEWithLogitsLoss",
     "build_bce_with_logits_loss",
     "classification_metrics",
     "estimate_pos_weight",

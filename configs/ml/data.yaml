@@ -1,0 +1,17 @@
+data:
+  train_csv: null
+  val_csv: null
+  val_fraction: 0.2
+  feature_columns:
+    - x0_mm
+    - y0_mm
+    - xprime
+    - yprime
+  target_columns:
+    - hit_bhc_primary
+    - hit_bhd_primary
+    - hit_gem0_primary
+    - secondary_in_bhc
+    - secondary_in_bhd
+    - secondary_in_gem0
+  normalize_inputs: true

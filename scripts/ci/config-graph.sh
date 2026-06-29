@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 cd "$repo_root"
+PYTHON="${PYTHON:-python3}"
 
 if ((BASH_VERSINFO[0] < 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] < 2))); then
   echo "config graph check requires Bash 4.2+; found $BASH_VERSION" >&2
@@ -14,10 +15,10 @@ fail() {
   exit 1
 }
 
-source configs/physics.sh
-source configs/slurm.sh
-source configs/g4psi.sh
-source configs/recipes.sh
+source configs/freeway/physics.sh
+source configs/slurm/slurm.sh
+source configs/freeway/g4psi.sh
+source configs/freeway/recipes.sh
 source src/freeway/shell/lib/errors.sh
 source src/freeway/shell/lib/orchs/g4psi.func.sh
 
@@ -67,7 +68,7 @@ slurm_cluster_values() {
   SLURM_CLUSTER="$cluster" "$BASH" -c '
     set -Eeuo pipefail
     cd "$1"
-    source configs/slurm.sh
+    source configs/slurm/slurm.sh
     printf "%s|%s|%s|%s|%s|%s|%s|%s\n" \
       "${SLURM_SIM_CONFIG[ACCOUNT]:-}" \
       "${SLURM_SIM_CONFIG[PARTITION]:-}" \
@@ -97,6 +98,32 @@ check_slurm_cluster_config() {
   fi
   [[ "$invalid_output" == *"unknown SLURM_CLUSTER: invalid"* ]] || \
     fail "invalid Slurm cluster error was unclear: $invalid_output"
+}
+
+check_ml_yaml_config() {
+  "$PYTHON" - <<'PY'
+from src.ml.python.io.args import parse_args
+from src.ml.python.io.config import default_ml_config_path, load_training_config_file
+
+config = load_training_config_file(default_ml_config_path())
+required = {"feature_columns", "target_columns", "hidden_dims", "loss", "epochs", "output_dir"}
+missing = required - set(config)
+if missing:
+    raise SystemExit(f"missing ML config key(s): {', '.join(sorted(missing))}")
+
+parsed = parse_args([
+    "--train-csv",
+    "/tmp/training.csv",
+    "--epochs",
+    "2",
+    "--device",
+    "cpu",
+])
+if parsed.epochs != 2 or parsed.device != "cpu":
+    raise SystemExit("CLI overrides did not win over ML YAML config")
+if parsed.feature_columns != ("x0_mm", "y0_mm", "xprime", "yprime"):
+    raise SystemExit(f"unexpected feature columns: {parsed.feature_columns}")
+PY
 }
 
 [[ ${#FREEWAY_STAGE_ORDER[@]} -gt 0 ]] || fail "FREEWAY_STAGE_ORDER is empty"
@@ -236,5 +263,6 @@ grep -q 'source_project_lib parallel.sh' src/freeway/shell/lib/loader.sh || fail
 check_g4psi_parallel_task_selection
 check_no_cooker_parallel_knob
 check_slurm_cluster_config
+check_ml_yaml_config
 
 echo "Config graph OK: ${#FREEWAY_STAGE_ORDER[@]} stages"

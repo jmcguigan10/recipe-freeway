@@ -77,7 +77,7 @@ cd packman-muse
 The pipeline has no cluster-specific code outside configuration, but a new
 cluster usually needs these changes:
 
-1. Edit `configs/slurm.sh`.
+1. Edit `configs/slurm/slurm.sh`.
    - Set `PARTITION`, and add `ACCOUNT` or `QOS` keys if your cluster requires
      them.
    - `MEM` is passed directly to `sbatch --mem`; use the syntax your cluster
@@ -113,16 +113,28 @@ For testing the submission layer without a real Slurm scheduler, set
 
 ## Configuration
 
-Pipeline defaults live in `configs/*.sh`:
+Pipeline and training defaults live under `configs/freeway/`, `configs/slurm/`,
+and `configs/ml/`:
 
 ```text
-configs/physics.sh   run number, particle, momentum, event count, seeds, RadGen, T0
-configs/g4psi.sh     g4PSI macro template and generated macro directory
-configs/slurm.sh     Slurm resources for simulation and recipe stages
-configs/recipes.sh   stage graph, recipes, inputs, outputs, trees, cooker calls
+configs/freeway/physics.sh   run number, particle, momentum, event count, seeds, RadGen, T0
+configs/freeway/g4psi.sh     g4PSI macro template and generated macro directory
+configs/freeway/recipes.sh   stage graph, recipes, inputs, outputs, trees, cooker calls
+configs/slurm/slurm.sh       Slurm resources for simulation and recipe stages
+configs/ml/*.yaml            modular ML training defaults
 ```
 
-Important `configs/physics.sh` keys:
+ML training loads `configs/ml/default.yaml` by default. That file includes the
+modular YAML files in `configs/ml/`; command-line options override loaded YAML
+values:
+
+```bash
+python3 src/ml/python/training/training_loop.py \
+  --config configs/ml/default.yaml \
+  --train-csv data_process/<tag>/<tag>_gem_classifier.csv
+```
+
+Important `configs/freeway/physics.sh` keys:
 
 ```text
 RUN_NR          MUSE run number passed into the generated macro
@@ -139,7 +151,7 @@ SEED_1/SEED_2   base random seeds; chunk seeds are offset deterministically
 `STORE_T0=true` writes the additional g4PSI `T0` tree with thrown-beam metadata.
 The code intentionally passes `--T0`; `-T0` is not a valid g4PSI flag.
 
-Important `configs/recipes.sh` behavior:
+Important `configs/freeway/recipes.sh` behavior:
 
 - `FREEWAY_STAGE_ORDER` defines stages 00-18.
 - `FREEWAY_STAGE_INPUTS` controls dependencies.
@@ -165,19 +177,20 @@ data_process/<pipeline-tag>/
 ```
 
 When a run directory is created or resolved, the pipeline snapshots the current
-top-level configs into:
+freeway configs into:
 
 ```text
-data_process/<pipeline-tag>/configs/
+data_process/<pipeline-tag>/configs/freeway/
 ```
 
-Existing snapshot files win over top-level `configs/*.sh`; snapshots are not
-overwritten. If you change a top-level config after a run exists, either edit the
-snapshot directly or remove the stale snapshot:
+Existing snapshot files win over current repo defaults; snapshots are not
+overwritten. Old flat snapshots under `data_process/<tag>/configs/*.sh` are
+still read for compatibility. If you change a freeway config after a run exists,
+either edit the snapshot directly or remove the stale snapshot:
 
 ```bash
-rm data_process/<tag>/configs/physics.sh
-rm data_process/<tag>/configs/slurm.sh
+rm data_process/<tag>/configs/freeway/physics.sh
+rm -f data_process/<tag>/configs/physics.sh  # old flat snapshot layout only
 bash src/slurm/run_freeway.sh <tag>
 ```
 
@@ -217,12 +230,12 @@ data_process/mc22308_rad2_e_pos_part0/
   mc22308_rad2_e_pos_part0_training_candidates.parquet
 ```
 
-Keep the tag consistent with `configs/physics.sh`; scripts do not derive the tag
+Keep the tag consistent with `configs/freeway/physics.sh`; scripts do not derive the tag
 from physics config values.
 
 ## Freeway Stages
 
-The stage graph is defined in `configs/recipes.sh`.
+The stage graph is defined in `configs/freeway/recipes.sh`.
 
 | Item | Stage | Output | Tree/Data | Inputs |
 | --- | --- | --- | --- | --- |

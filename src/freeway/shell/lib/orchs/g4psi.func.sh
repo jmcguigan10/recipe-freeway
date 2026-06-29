@@ -7,9 +7,17 @@ prepare_g4psi_config() {
   generated_dir="$(resolve_path_spec "${G4PSI_CONFIG[generated_dir]:-repo:macros/generated}")"
   generated_macro="$generated_dir/$run_tag.mac"
   rootfile="$(stage_output_root g4psi)"
+  gem_classifier_export="${G4PSI_CONFIG[gem_classifier_export]:-0}"
+  gem_classifier_exporter="$(resolve_path_spec "${G4PSI_CONFIG[gem_classifier_exporter]:-repo:src/freeway/python/gem_classifier/export_gem_classifier_table.py}")"
+  gem_classifier_tree="${G4PSI_CONFIG[gem_classifier_tree]:-${FREEWAY_STAGE_TREE[g4psi]:-T}}"
+  gem_classifier_output_suffix="${G4PSI_CONFIG[gem_classifier_output]:-gem_classifier}"
+  gem_classifier_csv="$(stage_path "$gem_classifier_output_suffix" csv)"
 
   require_file "$template"
   require_file "$renderer"
+  if is_truthy "$gem_classifier_export"; then
+    require_file "$gem_classifier_exporter"
+  fi
 }
 
 g4psi_positive_int_value() {
@@ -131,6 +139,26 @@ validate_g4psi_root_file() {
   fi
 }
 
+export_gem_classifier_table() {
+  local input_root="$1"
+  local output_csv="${2:-$gem_classifier_csv}"
+
+  if ! is_truthy "${gem_classifier_export:-0}"; then
+    return 0
+  fi
+
+  echo "GEM classifier CSV: $output_csv"
+  run_stack_python "$gem_classifier_exporter" \
+    --input-root "$input_root" \
+    --output-csv "$output_csv" \
+    --tree "$gem_classifier_tree" \
+    --run-tag "$run_tag"
+
+  if [[ ! -s "$output_csv" ]]; then
+    die "GEM classifier CSV output is missing or empty: $output_csv"
+  fi
+}
+
 run_g4psi_single_task_stage() {
   local rendered_rootfile
 
@@ -143,6 +171,7 @@ run_g4psi_single_task_stage() {
 
   run_g4psi_macro
   validate_g4psi_root_file "$rendered_rootfile"
+  export_gem_classifier_table "$rendered_rootfile"
 }
 
 run_g4psi_parallel_task_stage() {
@@ -214,6 +243,7 @@ run_g4psi_parallel_task_stage() {
 
   merge_root_files "$rootfile" "${FREEWAY_STAGE_TREE[$g4psi_stage]}" "${parallel_worker_roots[@]}"
   validate_g4psi_root_file "$rootfile"
+  export_gem_classifier_table "$rootfile"
 
   for chunk_root in "${parallel_worker_roots[@]}"; do
     rm -f "$chunk_root"

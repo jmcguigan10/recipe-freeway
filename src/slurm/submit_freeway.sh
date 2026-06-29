@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=muse-freeway
-# Cluster account/partition/qos are selected in configs/slurm.sh and passed to sbatch at runtime.
+# Cluster account/partition/qos are selected in configs/slurm/slurm.sh and passed to sbatch at runtime.
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2

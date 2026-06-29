@@ -4,7 +4,7 @@ set -Eeuo pipefail
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 cd "$repo_root"
 
-git ls-files --cached --others --exclude-standard '*.sh' 'configs/*.sh' |
+git ls-files --cached --others --exclude-standard '*.sh' 'configs/*.sh' 'configs/**/*.sh' |
   while IFS= read -r file; do
     [[ -f "$file" ]] || continue
     printf '%s\n' "$file"
