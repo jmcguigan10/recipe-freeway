@@ -1,0 +1,71 @@
+include:
+  - default.yaml
+
+data:
+  geometry_config: null
+  feature_columns:
+    - beam_p_mev
+    - beam_time_ns
+    - x0_mm
+    - y0_mm
+    - z0_mm
+    - theta_rad
+    - phi_rad
+    - dir_x
+    - dir_y
+    - dir_z
+    - xprime
+    - yprime
+    - x_at_bhc_mm
+    - y_at_bhc_mm
+    - r_at_bhc_mm
+    - bhc_edge_margin_mm
+    - x_at_bhd_mm
+    - y_at_bhd_mm
+    - r_at_bhd_mm
+    - bhd_edge_margin_mm
+    - x_at_gem0_mm
+    - y_at_gem0_mm
+    - r_at_gem0_mm
+    - gem0_edge_margin_mm
+    - path_scale_z
+  target_columns:
+    - miss_bhc_primary
+    - miss_bhd_primary
+    - miss_gem0_primary
+    - secondary_in_bhc
+    - secondary_in_bhd
+    - secondary_in_gem0
+    - bhc_above_threshold
+    - bhd_above_threshold
+
+model:
+  hidden_dims: [512, 512, 256]
+  dropout: 0.02
+  batch_norm: true
+  grouped_heads: true
+  head_hidden_dim: 256
+
+loss:
+  loss: grouped-bce
+  pos_weight: auto
+  primary_loss_weight: 1.0
+  secondary_loss_weight: 1.0
+  other_loss_weight: 1.0
+
+optimizer:
+  lr: 3e-3
+  scheduler: cosine
+  min_lr: 1e-5
+
+runtime:
+  epochs: 40
+  batch_size: 65536
+  num_workers: 4
+  checkpoint_metric: val_macro_auroc
+  checkpoint_mode: max
+  early_stopping_patience: 8
+  early_stopping_min_delta: 0.0
+  save_plots: true
+  plot_validation_predictions: true
+  plot_bins: 20

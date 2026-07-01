@@ -5,7 +5,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from .epoch import accumulate_component_losses, component_losses
-from .metrics import classification_metrics
+from .metrics import calibrated_probability_logits, classification_metrics
 
 
 @torch.no_grad()
@@ -17,6 +17,9 @@ def evaluate(
     *,
     threshold: float = 0.5,
     label_names: tuple[str, ...] | None = None,
+    pos_weight: torch.Tensor | None = None,
+    calibrate_pos_weight_logits: bool = True,
+    calibration_bins: int = 10,
 ) -> dict[str, float]:
     model.eval()
     total_loss = 0.0
@@ -44,7 +47,15 @@ def evaluate(
 
     logits = torch.cat(logits_batches, dim=0)
     targets = torch.cat(target_batches, dim=0)
-    metrics = classification_metrics(logits, targets, threshold=threshold, label_names=label_names)
+    probability_logits = calibrated_probability_logits(logits, pos_weight) if calibrate_pos_weight_logits else logits
+    metrics = classification_metrics(
+        logits,
+        targets,
+        threshold=threshold,
+        label_names=label_names,
+        probability_logits=probability_logits,
+        calibration_bins=calibration_bins,
+    )
     metrics["loss"] = total_loss / max(total_examples, 1)
     for key, value in component_loss_sums.items():
         metrics[key] = value / max(total_examples, 1)

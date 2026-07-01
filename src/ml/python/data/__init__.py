@@ -1,4 +1,5 @@
 from .cfgs import build_gem_data_config
+from .derived import MISS_TARGET_SOURCES
 from .gem_data import GemClassifierDataset
 from .registry import (
     DEFAULT_FEATURE_COLUMNS,
@@ -11,5 +12,6 @@ __all__ = [
     "DEFAULT_TARGET_COLUMNS",
     "GemClassifierDataset",
     "GemDataConfig",
+    "MISS_TARGET_SOURCES",
     "build_gem_data_config",
 ]

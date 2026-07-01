@@ -39,7 +39,9 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     print(
         f"Training complete: best_epoch={result['best_epoch']} "
-        f"best_val_loss={result['best_val_loss']:.6f} output_dir={result['output_dir']}"
+        f"best_val_loss={result['best_val_loss']:.6f} "
+        f"{result['best_metric_name']}={result['best_metric_value']:.6f} "
+        f"output_dir={result['output_dir']}"
     )
     return 0
 

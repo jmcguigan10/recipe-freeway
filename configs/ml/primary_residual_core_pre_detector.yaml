@@ -1,0 +1,17 @@
+include:
+  - primary_miss_pre_detector.yaml
+
+data:
+  target_columns:
+    - residual_miss_bhc_primary
+    - residual_miss_bhd_primary
+    - residual_miss_gem0_primary
+
+runtime:
+  checkpoint_metric: val_macro_average_precision
+  checkpoint_mode: max
+
+loss:
+  primary_loss_weight: 0.0
+  secondary_loss_weight: 0.0
+  other_loss_weight: 1.0

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 ML_CONFIG_SECTIONS = ("data", "model", "loss", "optimizer", "runtime")
+PATH_CONFIG_KEYS = {"geometry_config"}
 
 
 def default_ml_config_path() -> Path:
@@ -58,6 +59,7 @@ def _load_yaml_with_includes(path: Path, *, seen: set[Path]) -> dict[str, Any]:
 
     local_payload = dict(payload)
     local_payload.pop("include", None)
+    local_payload = _resolve_path_config_values(local_payload, path.parent)
     merged = _deep_merge(merged, local_payload)
     seen.remove(path)
     return merged
@@ -78,6 +80,30 @@ def _include_paths(path: Path, includes: Any) -> list[Path]:
             include_path = path.parent / include_path
         paths.append(include_path.resolve())
     return paths
+
+
+def _resolve_path_config_values(payload: Mapping[str, Any], base_dir: Path) -> dict[str, Any]:
+    resolved: dict[str, Any] = {}
+    for key, value in payload.items():
+        if isinstance(value, Mapping):
+            resolved[key] = _resolve_path_config_values(value, base_dir)
+        elif key in PATH_CONFIG_KEYS:
+            resolved[key] = _resolve_optional_path(value, base_dir)
+        else:
+            resolved[key] = value
+    return resolved
+
+
+def _resolve_optional_path(value: Any, base_dir: Path) -> Any:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if text.lower() in ("", "none", "false", "0", "off", "null"):
+        return value
+    path = Path(text).expanduser()
+    if path.is_absolute():
+        return str(path)
+    return str((base_dir / path).resolve())
 
 
 def _deep_merge(base: Mapping[str, Any], override: Mapping[str, Any]) -> dict[str, Any]:

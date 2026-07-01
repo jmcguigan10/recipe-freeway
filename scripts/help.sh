@@ -124,6 +124,15 @@ ML training options
   --val-fraction FLOAT
       Validation split fraction when --val-csv is omitted. Default: 0.2
 
+  --calibration-fraction FLOAT
+      Optional third split used for post-hoc calibration and final plots.
+
+  --split-strategy random|event-hash
+      Split rows randomly or by deterministic hash of --split-column.
+
+  --split-column NAME
+      Column used by event-hash splitting. Default: event_index.
+
   --epochs N
       Number of training epochs. Default: 20
 
@@ -158,11 +167,76 @@ ML training options
   --pos-weight auto|none|w1,w2,...
       BCEWithLogits positive weights. Default: auto
 
+  --pos-weight-max FLOAT
+      Optional cap applied to auto positive weights.
+
+  --checkpoint-metric NAME
+      Metric column used for best.pt and early stopping. Default: val_loss.
+      For rare labels prefer val_macro_auroc.
+
+  --checkpoint-mode min|max
+      Whether lower or higher checkpoint metric is better. Default: min.
+
+  --early-stopping-patience N
+      Stop after N epochs without checkpoint metric improvement. 0 disables it.
+
+  --calibrate-pos-weight-logits / --no-calibrate-pos-weight-logits
+      For probability metrics and plots, subtract log(pos_weight) from logits
+      trained with weighted BCE. Enabled by default.
+
+  --save-plots / --no-save-plots
+      Save plot artifacts under <output-dir>/plots at the end of training.
+      Enabled by default.
+
+  --plot-validation-predictions / --no-plot-validation-predictions
+      Save a sampled validation logits/probabilities/targets CSV for the best checkpoint.
+      Enabled by default.
+
+  --save-full-validation-predictions / --no-save-full-validation-predictions
+      Save the full validation prediction CSV. Disabled by default because it can be large.
+
+  --prediction-sample-size N
+      Maximum sampled prediction rows to save, keeping all positives first. Default: 250000.
+
+  --edge-band-mm FLOAT
+      Geometry edge band width used in regime diagnostics. Default: 5.
+
+  --near-band-mm FLOAT
+      Geometry near band upper edge used in regime diagnostics. Default: 20.
+
+  --plot-bins N
+      Number of bins for calibration and rate plots. Default: 20
+
+  --feature-columns LIST
+      Comma-separated or YAML-list input columns. Supports derived geometry
+      features such as x_at_gem0_mm and gem0_edge_margin_mm.
+
+  --target-columns LIST
+      Comma-separated or YAML-list binary targets. Supports derived miss labels
+      such as miss_gem0_primary.
+
+  --geometry-config PATH
+      YAML detector geometry constants required by derived geometry features.
+
 ML training artifacts
   best.pt
   latest.pt
   metrics.csv
   config.json
+  calibration.json
+  summary_tables/per_label_metrics.csv
+  summary_tables/regime_metrics.csv
+  summary_tables/topk_lift.csv
+  summary_tables/calibration_bins.csv
+  plots/index.json
+  plots/loss_curves.png
+  plots/roc_curves.png
+  plots/pr_curves.png
+  plots/calibration_curves.png
+  plots/predicted_vs_observed_bins.png
+  plots/edge_margin_rate_curves.png
+  plots/xy_acceptance_heatmaps.png
+  plots/validation_predictions.csv
 
 ML training examples
   python3 src/ml/python/training/training_loop.py \
@@ -177,6 +251,22 @@ ML training examples
     --epochs 2 \
     --batch-size 32 \
     --device cpu
+
+  python3 src/ml/python/training/training_loop.py \
+    --config configs/ml/discrete_pre_detector.yaml \
+    --geometry-config configs/ml/geometry.yaml \
+    --train-csv data_process/<tag>/<tag>_gem_classifier.csv \
+    --output-dir data_process/<tag>/ml/discrete_pre_detector
+
+  python3 src/ml/python/training/training_loop.py \
+    --config configs/ml/primary_miss_pre_detector.yaml \
+    --train-csv data_process/<tag>/<tag>_gem_classifier.csv \
+    --output-dir data_process/<tag>/ml/primary_miss_pre_detector
+
+  python3 -m src.ml.python.data.enrich_gem_classifier \
+    --input-csv data_process/<tag>/<tag>_gem_classifier.csv \
+    --geometry-config configs/ml/geometry.yaml \
+    --output-parquet data_process/<tag>/ml/<tag>_gem_classifier_enriched.parquet
 
 Related config files
   configs/freeway/physics.sh

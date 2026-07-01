@@ -1,0 +1,22 @@
+detectors:
+  bhc:
+    z_mm: null
+    center_x_mm: 0.0
+    center_y_mm: 0.0
+    shape: rect
+    half_width_mm: null
+    half_height_mm: null
+  bhd:
+    z_mm: null
+    center_x_mm: 0.0
+    center_y_mm: 0.0
+    shape: rect
+    half_width_mm: null
+    half_height_mm: null
+  gem0:
+    z_mm: null
+    center_x_mm: 0.0
+    center_y_mm: 0.0
+    shape: rect
+    half_width_mm: null
+    half_height_mm: null

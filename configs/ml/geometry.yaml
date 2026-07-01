@@ -1,0 +1,35 @@
+# Source-derived nominal beamline detector geometry for mc22308_rad2_e_pos_part0.
+# Values are in the MUSE/g4PSI beam coordinate frame used by beam_x0/beam_y0/beam_z0.
+# Sources:
+#   g4PSIDetectorConstruction.cc: downstream_edge_of_table = -25 cm
+#   g4PSIBeamLineDetectors.cc: BH/GEM telescope placement in beamline box
+#   g4PSIBeamHodoscope.cc: BHC/BHD plane placement
+#   g4PSIBeamHodoscopePlane.cc: paddle active extents and SiPM dimensions
+#   g4PSIGEMTelescope.cc and g4PSIGEM.cc: GEM0 placement and active 10 cm x 10 cm area
+#   macros/generated/mc22308_rad2_e_pos_part0.mac: GEM0 alignment offset
+
+detectors:
+  bhc:
+    z_mm: -605.0
+    center_x_mm: 0.0
+    center_y_mm: 0.0
+    shape: rect
+    # BHC is rotated 90 deg: local paddle length maps to global x, paddle array maps to global y.
+    # Sensitive length includes 100 mm scintillator plus 4 mm SiPM extension at each end.
+    half_width_mm: 54.0
+    half_height_mm: 52.051
+  bhd:
+    z_mm: -585.0
+    center_x_mm: 1.0
+    center_y_mm: 0.0
+    shape: rect
+    half_width_mm: 52.042
+    # Sensitive length includes 100 mm scintillator plus 4 mm SiPM extension at each end.
+    half_height_mm: 54.0
+  gem0:
+    z_mm: -512.508
+    center_x_mm: -0.511
+    center_y_mm: 0.106
+    shape: rect
+    half_width_mm: 50.0
+    half_height_mm: 50.0
