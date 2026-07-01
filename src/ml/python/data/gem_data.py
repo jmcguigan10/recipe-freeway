@@ -7,6 +7,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
+from .derived import build_feature_frame, build_target_frame, load_geometry_config
 from .registry import GemDataConfig
 
 
@@ -20,6 +21,7 @@ class GemClassifierDataset(Dataset):
         self.csv_path = Path(self.config.csv_path)
         self.feature_columns = tuple(self.config.feature_columns)
         self.target_columns = tuple(self.config.target_columns)
+        self.geometry = load_geometry_config(self.config.geometry_config)
         self.dtype = self.config.dtype
         self.transform = self.config.transform
         self.normalize_features = self.config.normalize_features
@@ -30,12 +32,26 @@ class GemClassifierDataset(Dataset):
             raise ValueError("target_columns must not be empty")
 
         frame = pd.read_csv(self.csv_path)
-        _require_columns(frame, self.feature_columns, "feature")
-        _require_columns(frame, self.target_columns, "target")
+        feature_frame = build_feature_frame(
+            frame,
+            self.feature_columns,
+            self.geometry,
+            edge_band_mm=self.config.edge_band_mm,
+            near_band_mm=self.config.near_band_mm,
+        )
+        target_frame = build_target_frame(
+            frame,
+            self.target_columns,
+            self.geometry,
+            edge_band_mm=self.config.edge_band_mm,
+            near_band_mm=self.config.near_band_mm,
+        )
 
         self.frame = frame
+        self.feature_frame = feature_frame
+        self.target_frame = target_frame
         raw_features = torch.as_tensor(
-            frame.loc[:, self.feature_columns].to_numpy(dtype="float32", copy=True),
+            feature_frame.to_numpy(dtype="float32", copy=True),
             dtype=self.dtype,
         )
         if self.normalize_features:
@@ -54,7 +70,7 @@ class GemClassifierDataset(Dataset):
             self.features = raw_features
 
         self.targets = torch.as_tensor(
-            frame.loc[:, self.target_columns].to_numpy(dtype="float32", copy=True),
+            target_frame.to_numpy(dtype="float32", copy=True),
             dtype=self.dtype,
         )
         self.target_positive_rates = self.targets.mean(dim=0)

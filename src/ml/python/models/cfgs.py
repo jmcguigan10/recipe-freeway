@@ -140,27 +140,32 @@ def grouped_output_indices(output_names: Sequence[str]) -> tuple[tuple[int, ...]
     primary_indices = tuple(
         index
         for index, name in enumerate(parsed_output_names)
-        if name.startswith("hit_") and name.endswith("_primary")
+        if primary_output_name(name)
     )
     secondary_indices = tuple(
         index for index, name in enumerate(parsed_output_names) if name.startswith("secondary_in_")
     )
     grouped_indices = set(primary_indices) | set(secondary_indices)
     other_indices = tuple(index for index in range(len(parsed_output_names)) if index not in grouped_indices)
-    if other_indices:
-        raise ValueError(
-            "LatWrap grouped architecture only supports hit_*_primary and secondary_in_* labels; "
-            + ", ".join(parsed_output_names[index] for index in other_indices)
-        )
 
     task_indices: list[tuple[int, ...]] = []
     if primary_indices:
         task_indices.append(primary_indices)
     if secondary_indices:
         task_indices.append(secondary_indices)
+    if other_indices:
+        task_indices.append(other_indices)
     if not task_indices:
         raise ValueError("LatWrap grouped architecture requires at least one non-empty output group")
     return tuple(task_indices)
+
+
+def primary_output_name(name: str) -> bool:
+    return (
+        (name.startswith("hit_") and name.endswith("_primary"))
+        or (name.startswith("miss_") and name.endswith("_primary"))
+    )
+
 
 
 def build_classifier_head(

@@ -17,6 +17,9 @@ def save_checkpoint(
     epoch: int,
     best_val_loss: float,
     config_payload: dict[str, Any],
+    best_metric_name: str | None = None,
+    best_metric_value: float | None = None,
+    best_epoch: int | None = None,
 ) -> None:
     torch.save(
         {
@@ -24,6 +27,9 @@ def save_checkpoint(
             "optimizer_state_dict": optimizer.state_dict(),
             "epoch": epoch,
             "best_val_loss": best_val_loss,
+            "best_metric_name": best_metric_name,
+            "best_metric_value": best_metric_value,
+            "best_epoch": best_epoch,
             "feature_columns": config_payload["feature_columns"],
             "target_columns": config_payload["target_columns"],
             "config": config_payload,

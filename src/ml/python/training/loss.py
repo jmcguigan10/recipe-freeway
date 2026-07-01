@@ -125,6 +125,8 @@ class MultiTaskBCEWithLogitsLoss(nn.Module):
 def label_group_for(label: str) -> str:
     if label.startswith("hit_") and label.endswith("_primary"):
         return "primary"
+    if label.startswith("miss_") and label.endswith("_primary"):
+        return "primary"
     if label.startswith("secondary_in_"):
         return "secondary"
     return "other"

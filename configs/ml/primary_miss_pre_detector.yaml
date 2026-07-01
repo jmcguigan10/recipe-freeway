@@ -1,0 +1,97 @@
+include:
+  - default.yaml
+
+data:
+  geometry_config: geometry.yaml
+  split_strategy: event-hash
+  split_column: event_index
+  val_fraction: 0.15
+  calibration_fraction: 0.15
+  feature_columns:
+    - beam_p_mev
+    - beam_time_ns
+    - x0_mm
+    - y0_mm
+    - z0_mm
+    - theta_rad
+    - phi_rad
+    - dir_x
+    - dir_y
+    - dir_z
+    - xprime
+    - yprime
+    - x_at_bhc_mm
+    - y_at_bhc_mm
+    - x_local_at_bhc_mm
+    - y_local_at_bhc_mm
+    - r_at_bhc_mm
+    - bhc_edge_margin_mm
+    - bhc_edge_margin_norm
+    - geom_outside_bhc
+    - geom_edge_bhc
+    - geom_near_bhc
+    - geom_core_bhc
+    - x_at_bhd_mm
+    - y_at_bhd_mm
+    - x_local_at_bhd_mm
+    - y_local_at_bhd_mm
+    - r_at_bhd_mm
+    - bhd_edge_margin_mm
+    - bhd_edge_margin_norm
+    - geom_outside_bhd
+    - geom_edge_bhd
+    - geom_near_bhd
+    - geom_core_bhd
+    - x_at_gem0_mm
+    - y_at_gem0_mm
+    - x_local_at_gem0_mm
+    - y_local_at_gem0_mm
+    - r_at_gem0_mm
+    - gem0_edge_margin_mm
+    - gem0_edge_margin_norm
+    - geom_outside_gem0
+    - geom_edge_gem0
+    - geom_near_gem0
+    - geom_core_gem0
+    - path_scale_z
+  target_columns:
+    - miss_bhc_primary
+    - miss_bhd_primary
+    - miss_gem0_primary
+
+model:
+  hidden_dims: [1024, 1024, 512, 256]
+  dropout: 0.01
+  batch_norm: true
+  grouped_heads: true
+  head_hidden_dim: 256
+
+loss:
+  loss: grouped-bce
+  pos_weight: auto
+  pos_weight_max: 200
+  primary_loss_weight: 1.0
+  secondary_loss_weight: 0.0
+  other_loss_weight: 0.0
+
+optimizer:
+  lr: 2e-3
+  weight_decay: 1e-4
+  scheduler: cosine
+  min_lr: 1e-5
+
+runtime:
+  epochs: 80
+  batch_size: 131072
+  num_workers: 4
+  checkpoint_metric: val_macro_average_precision
+  checkpoint_mode: max
+  early_stopping_patience: 10
+  early_stopping_min_delta: 0.0
+  save_plots: true
+  plot_validation_predictions: true
+  save_full_validation_predictions: false
+  prediction_sample_size: 250000
+  plot_bins: 20
+  edge_band_mm: 5.0
+  near_band_mm: 20.0

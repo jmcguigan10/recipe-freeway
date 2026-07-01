@@ -28,6 +28,7 @@ def config_payload_for(
     payload.update(
         {
             "feature_columns": list(train_dataset.feature_columns),
+            "geometry": train_dataset.geometry,
             "feature_mean": [float(value) for value in train_dataset.feature_mean],
             "feature_std": [float(value) for value in train_dataset.feature_std],
             "normalize_inputs": train_dataset.normalize_features,

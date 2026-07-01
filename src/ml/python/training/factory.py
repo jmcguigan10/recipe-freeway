@@ -80,7 +80,10 @@ def resolve_pos_weight(
     if raw in ("none", "false", "0", "off"):
         return None
     if raw == "auto":
-        return estimate_pos_weight(train_loader, device=device)
+        weights = estimate_pos_weight(train_loader, device=device)
+        if config.pos_weight_max is not None:
+            weights = weights.clamp_max(float(config.pos_weight_max))
+        return weights
     values = [float(value.strip()) for value in config.pos_weight.split(",") if value.strip()]
     if not values:
         raise ValueError("--pos-weight must be 'auto', 'none', or comma-separated floats")

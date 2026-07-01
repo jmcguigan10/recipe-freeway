@@ -2,6 +2,7 @@ data:
   train_csv: null
   val_csv: null
   val_fraction: 0.2
+  geometry_config: null
   feature_columns:
     - x0_mm
     - y0_mm
